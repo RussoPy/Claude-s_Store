@@ -1,5 +1,28 @@
-import React, { useContext } from 'react';
+import React, { useContext, useEffect } from 'react';
 import { CartContext } from '../context/CartContext';
+import { PayPalScriptProvider, PayPalButtons, usePayPalScriptReducer } from "@paypal/react-paypal-js";
+
+// Custom component to handle the loading state of the PayPal script
+const PayPalCheckoutButton = ({ createOrder, onApprove, onError }: any) => {
+  const [{ isPending }, dispatch] = usePayPalScriptReducer();
+
+  useEffect(() => {
+    // You can dispatch actions to change script loading options here if needed
+  }, []);
+
+  return (
+    <>
+      {isPending && <div className="loading-spinner">טוען תשלום...</div>}
+      <PayPalButtons
+        style={{ layout: "vertical" }}
+        createOrder={createOrder}
+        onApprove={onApprove}
+        onError={onError}
+        disabled={isPending}
+      />
+    </>
+  );
+};
 
 const CheckoutPage = () => {
   const cartContext = useContext(CartContext);
@@ -8,35 +31,75 @@ const CheckoutPage = () => {
     return <div>טוען...</div>;
   }
 
-  const { getCartTotal, clearCart } = cartContext;
+  const { getCartTotal, clearCart, cartItems } = cartContext;
 
-  const handleCheckout = () => {
-    // In a real app, you would integrate with a payment gateway here.
-    alert('תודה על ההזמנה!');
-    clearCart();
+  const createOrder = (data: any, actions: any) => {
+    return actions.order.create({
+      purchase_units: [
+        {
+          amount: {
+            currency_code: "ILS",
+            value: getCartTotal().toFixed(2),
+          },
+        },
+      ],
+    });
   };
 
+  const onApprove = (data: any, actions: any) => {
+    return actions.order.capture().then(async (details: any) => {
+      try {
+        const response = await fetch('/api/orders/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            paypalDetails: details,
+            cartItems: cartItems
+          })
+        });
+
+        const orderData = await response.json();
+
+        if (response.ok) {
+          alert(`תודה על ההזמנה, ${details.payer.name.given_name}! מספר הזמנה: ${details.id}`);
+          clearCart();
+        } else {
+          throw new Error(orderData.message || 'שגיאה בשמירת ההזמנה');
+        }
+
+      } catch (error) {
+        console.error("Error saving order: ", error);
+        alert('   אירעה שגיאה בשליחת ההזמנה. אנא צור קשר עם שירות הלקוחות.');
+      }
+    });
+  };
+
+  const onError = (err: any) => {
+    console.error("PayPal Checkout onError", err);
+    alert('אירעה שגיאה במהלך התשלום.');
+  }
+
   return (
-    <div className="checkout-page">
-      <h1>תשלום</h1>
-      <div className="order-summary">
-        <h2>סיכום הזמנה</h2>
-        <p>סה"כ: ₪{getCartTotal().toFixed(2)}</p>
+    <PayPalScriptProvider options={{ clientId: process.env.REACT_APP_PAYPAL_CLIENT_ID || "test", currency: "ILS" }}>
+      <div className="checkout-page" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minHeight: '80vh' }}>
+        <div style={{ width: '100%', maxWidth: '500px', textAlign: 'center' }}>
+          <h1>תשלום</h1>
+          <div className="order-summary">
+            <h2>סיכום הזמנה</h2>
+            <p>סה"כ: ₪{getCartTotal().toFixed(2)}</p>
+          </div>
+          <div style={{ marginTop: '20px', zIndex: 0 }}>
+            <PayPalCheckoutButton
+              createOrder={createOrder}
+              onApprove={onApprove}
+              onError={onError}
+            />
+          </div>
+        </div>
       </div>
-      <div className="checkout-form">
-        <h2>פרטי משלוח</h2>
-        <form>
-          <input type="text" placeholder="שם מלא" required />
-          <input type="email" placeholder="אימייל" required />
-          <input type="text" placeholder="כתובת" required />
-          <input type="text" placeholder="עיר" required />
-          <input type="text" placeholder="מיקוד" required />
-          <button type="button" onClick={handleCheckout}>
-            בצע הזמנה
-          </button>
-        </form>
-      </div>
-    </div>
+    </PayPalScriptProvider>
   );
 };
 

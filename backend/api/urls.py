@@ -1,14 +1,13 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views.main import CategoryViewSet, ProductViewSet, OrderViewSet
-from .views.admin import AdminLoginView
+from .views import main, admin, orders
 
 router = DefaultRouter()
-router.register(r'categories', CategoryViewSet, basename='category')
-router.register(r'products', ProductViewSet, basename='product')
-router.register(r'orders', OrderViewSet)
+router.register(r'products', main.ProductViewSet, basename='product')
+router.register(r'categories', main.CategoryViewSet, basename='category')
 
 urlpatterns = [
     path('', include(router.urls)),
-    path('admin/login/', AdminLoginView.as_view(), name='admin_login'),
+    path('admin/login/', admin.AdminLoginView.as_view(), name='admin_login'),
+    path('orders/', orders.create_order, name='create-order'),
 ] 
