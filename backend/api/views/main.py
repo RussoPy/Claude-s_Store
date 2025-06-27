@@ -146,7 +146,8 @@ class ProductViewSet(viewsets.ViewSet):
             'name': data.get('name', ''),
             'description': data.get('description', ''),
             'price': float(data.get('price', 0)),
-            'inStock': int(data.get('inStock', 0)),
+            'quantity': int(data.get('quantity', 0)),
+            'imageUrl': data.get('imageUrl', ''),
             'categoryRef': category_ref
         }
         # Basic validation
@@ -165,7 +166,8 @@ class ProductViewSet(viewsets.ViewSet):
             'name': data.get('name'),
             'description': data.get('description'),
             'price': float(data.get('price')) if data.get('price') is not None else None,
-            'inStock': int(data.get('inStock')) if data.get('inStock') is not None else None,
+            'quantity': int(data.get('quantity')) if data.get('quantity') is not None else None,
+            'imageUrl': data.get('imageUrl') if 'imageUrl' in data else None
         }
         
         # Filter out any None values so we don't overwrite fields with nulls

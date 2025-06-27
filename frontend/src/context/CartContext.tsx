@@ -1,4 +1,4 @@
-import React, { createContext, useState, ReactNode } from 'react';
+import React, { createContext, useState, ReactNode, useEffect } from 'react';
 import { CartItem } from '../types/CartItem';
 import { Product } from '../types/Product';
 
@@ -18,8 +18,19 @@ interface CartContextType {
 export const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export const CartProvider = ({ children }: { children: ReactNode }) => {
-    const [cartItems, setCartItems] = useState<CartItem[]>([]);
+    const [cartItems, setCartItems] = useState<CartItem[]>(() => {
+        try {
+            const localData = localStorage.getItem('cartItems');
+            return localData ? JSON.parse(localData) : [];
+        } catch (error) {
+            return [];
+        }
+    });
     const [isCartOpen, setIsCartOpen] = useState(false);
+
+    useEffect(() => {
+        localStorage.setItem('cartItems', JSON.stringify(cartItems));
+    }, [cartItems]);
 
     const toggleCart = () => setIsCartOpen(!isCartOpen);
     const openCart = () => setIsCartOpen(true);

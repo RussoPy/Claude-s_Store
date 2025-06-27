@@ -17,9 +17,11 @@ const HomePage: React.FC<HomePageProps> = ({ onProductAdd, onProductRemove }) =>
     const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
     const [catLoading, setCatLoading] = useState(true);
 
+    const backendUrl = process.env.REACT_APP_BACKEND_URL || '';
+
     useEffect(() => {
         setLoading(true);
-        let url = '/api/products/';
+        let url = `${backendUrl}/api/products/`;
         if (selectedCategory) {
             url += `?category_id=${selectedCategory}`;
         }
@@ -40,7 +42,7 @@ const HomePage: React.FC<HomePageProps> = ({ onProductAdd, onProductRemove }) =>
 
     useEffect(() => {
         setCatLoading(true);
-        fetch('/api/categories/')
+        fetch(`${backendUrl}/api/categories/`)
             .then(res => {
                 if (!res.ok) throw new Error('Network response was not ok');
                 return res.json();
@@ -87,7 +89,7 @@ const HomePage: React.FC<HomePageProps> = ({ onProductAdd, onProductRemove }) =>
                     ))}
                 </div>
                 {loading && <p>טוען מוצרים...</p>}
-                {error && <p style={{color: 'red'}}>{error}</p>}
+                {error && <p style={{ color: 'red' }}>{error}</p>}
                 <div className="product-list">
                     {products.map(product => (
                         <ProductCard key={product.id} product={product} onProductAdd={onProductAdd} onProductRemove={onProductRemove} />

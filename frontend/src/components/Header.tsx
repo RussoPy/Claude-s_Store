@@ -12,9 +12,6 @@ const Header = () => {
                 <Link to="/">פודיז</Link>
             </div>
             <nav>
-                <Link to="/cart">
-                    עגלה ({cartItemsCount})
-                </Link>
             </nav>
         </header>
     );
