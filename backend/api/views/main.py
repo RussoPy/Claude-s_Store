@@ -2,8 +2,11 @@ from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAdminUser, AllowAny
 from firebase_admin import firestore
-from .models import Category, Product, Order
-from .serializers import CategorySerializer, ProductSerializer, OrderSerializer
+
+# The OrderViewSet still uses Django's ORM and serializers.
+# This would be the next thing to migrate if you want orders in Firestore too.
+from ..models import Order
+from ..serializers import OrderSerializer
 
 class CategoryViewSet(viewsets.ViewSet):
     """
@@ -181,8 +184,6 @@ class ProductViewSet(viewsets.ViewSet):
         doc_ref.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-# The OrderViewSet still uses Django's ORM and serializers.
-# This would be the next thing to migrate if you want orders in Firestore too.
 class OrderViewSet(viewsets.ModelViewSet):
     """
     A ViewSet for viewing and creating orders.

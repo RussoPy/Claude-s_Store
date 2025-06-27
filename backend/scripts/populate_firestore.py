@@ -27,13 +27,18 @@ def initialize_firebase():
             "token_uri": os.getenv("TOKEN_URI"),
             "auth_provider_x509_cert_url": os.getenv("AUTH_PROVIDER_X509_CERT_URL"),
             "client_x509_cert_url": os.getenv("CLIENT_X509_CERT_URL"),
-            "universe_domain": os.getenv("UNIVERSE_DOMAIN")
+            "universe_domain": os.getenv("UNIVERSE_DOMAIN"),
+            "firebase_web_api_key": os.getenv("FIREBASE_WEB_API_KEY")
         }
         
         # Check if all required credentials are present
         if not all(creds.values()):
             print("Error: Missing one or more Firebase credentials in your .env file.")
+            print("Required: TYPE, PROJECT_ID, PRIVATE_KEY_ID, PRIVATE_KEY, CLIENT_EMAIL, CLIENT_ID, AUTH_URI, TOKEN_URI, AUTH_PROVIDER_X509_CERT_URL, CLIENT_X509_CERT_URL, UNIVERSE_DOMAIN, FIREBASE_WEB_API_KEY")
             sys.exit(1)
+
+        # Remove the web API key before initializing the admin SDK
+        creds.pop("firebase_web_api_key")
 
         cred = credentials.Certificate(creds)
         firebase_admin.initialize_app(cred)

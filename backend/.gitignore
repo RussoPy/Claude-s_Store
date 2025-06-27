@@ -2,6 +2,9 @@
 serviceAccountKey.json
 claude-s-store-firebase-adminsdk-fbsvc-de19616c7f.json
 
+# Documentation
+efune.md
+
 # Django
 db.sqlite3
 .env

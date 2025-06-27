@@ -4,5 +4,6 @@ djangorestframework
 django-cors-headers
 firebase-admin
 python-dotenv
+requests
 sqlparse==0.5.0
 tzdata==2024.1
