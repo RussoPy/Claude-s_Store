@@ -1,0 +1,14 @@
+# Firebase
+serviceAccountKey.json
+claude-s-store-firebase-adminsdk-fbsvc-de19616c7f.json
+
+# Django
+db.sqlite3
+.env
+env/
+venv/
+__pycache__/
+
+# IDE
+.vscode/
+.idea/ 

@@ -1,0 +1,8 @@
+asgiref==3.8.1
+Django==5.0.6
+djangorestframework
+django-cors-headers
+firebase-admin
+python-dotenv
+sqlparse==0.5.0
+tzdata==2024.1
