@@ -2,6 +2,8 @@ import React, { useRef, useEffect, useState } from 'react';
 import ProductCard from '../components/ProductCard';
 import { Product } from '../types/Product';
 import { Category } from '../types/Category';
+import { db } from '../firebase';
+import { collection, getDocs, QueryDocumentSnapshot, DocumentData } from 'firebase/firestore';
 
 interface HomePageProps {
     onProductAdd?: () => void;
@@ -10,49 +12,62 @@ interface HomePageProps {
 
 const HomePage: React.FC<HomePageProps> = ({ onProductAdd, onProductRemove }) => {
     const productsRef = useRef<HTMLDivElement>(null);
+    const [allProducts, setAllProducts] = useState<Product[]>([]);
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [categories, setCategories] = useState<Category[]>([]);
-    const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
+    const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
     const [catLoading, setCatLoading] = useState(true);
-
-    const backendUrl = process.env.REACT_APP_BACKEND_URL || '';
 
     useEffect(() => {
         setLoading(true);
-        let url = `${backendUrl}/api/products/`;
-        if (selectedCategory) {
-            url += `?category_id=${selectedCategory}`;
-        }
-        fetch(url)
-            .then(res => {
-                if (!res.ok) throw new Error('Network response was not ok');
-                return res.json();
-            })
-            .then(data => {
-                setProducts(data);
-                setLoading(false);
-            })
-            .catch(err => {
-                setError('שגיאה בטעינת המוצרים');
-                setLoading(false);
+        setCatLoading(true);
+        Promise.all([
+            getDocs(collection(db, 'products')),
+            getDocs(collection(db, 'categories'))
+        ])
+        .then(([productsSnap, categoriesSnap]) => {
+            const productsData: Product[] = productsSnap.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => {
+                const data = doc.data();
+                let categoryId = '';
+                // Handle Firestore DocumentReference or string
+                if (data.categoryRef && typeof data.categoryRef === 'object' && 'id' in data.categoryRef) {
+                    categoryId = data.categoryRef.id;
+                } else if (typeof data.categoryRef === 'string') {
+                    const parts = data.categoryRef.split('/');
+                    categoryId = parts[parts.length - 1];
+                }
+                return {
+                    id: doc.id,
+                    name: data.name,
+                    description: data.description,
+                    price: data.price,
+                    image: data.image || data.imageUrl || '',
+                    categoryId,
+                } as Product;
             });
-    }, [selectedCategory]);
+            const categoriesData: Category[] = categoriesSnap.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => ({ id: doc.id, ...doc.data() } as Category));
+            setAllProducts(productsData);
+            setProducts(productsData);
+            setCategories(categoriesData);
+            setLoading(false);
+            setCatLoading(false);
+        })
+        .catch(() => {
+            setError('שגיאה בטעינת המוצרים או הקטגוריות');
+            setLoading(false);
+            setCatLoading(false);
+        });
+    }, []);
 
     useEffect(() => {
-        setCatLoading(true);
-        fetch(`${backendUrl}/api/categories/`)
-            .then(res => {
-                if (!res.ok) throw new Error('Network response was not ok');
-                return res.json();
-            })
-            .then(data => {
-                setCategories(data);
-                setCatLoading(false);
-            })
-            .catch(() => setCatLoading(false));
-    }, []);
+        if (selectedCategory === null) {
+            setProducts(allProducts);
+        } else {
+            setProducts(allProducts.filter(p => p.categoryId === selectedCategory));
+        }
+    }, [selectedCategory, allProducts]);
 
     const handleScrollToProducts = () => {
         if (productsRef.current) {

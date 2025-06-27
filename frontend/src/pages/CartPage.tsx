@@ -43,7 +43,14 @@ const CartPage: React.FC<CartPageProps> = ({ onProductRemove, onProductAdd }) =>
             </div>
             <h1>העגלה שלך</h1>
             {cartItems.length === 0 ? (
-                <p>העגלה ריקה.</p>
+                <>
+                    <p>העגלה ריקה.</p>
+                    <Link to="/">
+                        <button style={{ marginTop: 16, fontSize: 18, padding: '10px 32px', borderRadius: 20, background: '#1a9da1', color: '#fff', border: 'none', fontWeight: 700, cursor: 'pointer' }}>
+                            חזור לחנות והמשך לקנות
+                        </button>
+                    </Link>
+                </>
             ) : (
                 <>
                     <div className="cart-items">

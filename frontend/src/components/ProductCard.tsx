@@ -29,8 +29,8 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onProductAdd, onProd
     };
 
     return (
-        <div className="product-card">
-            <img src={product.image} alt={product.name} />
+        <div className="product-card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <img src={product.image || ''} alt={product.name} style={{ display: 'block', margin: '0 auto', maxWidth: '100%', maxHeight: 180, objectFit: 'contain' }} />
             <h3>{product.name}</h3>
             <p>₪{product.price.toFixed(2)}</p>
             {itemInCart ? (

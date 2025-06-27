@@ -6,9 +6,9 @@ interface CartContextType {
     cartItems: CartItem[];
     isCartOpen: boolean;
     addToCart: (product: Product) => void;
-    decrementFromCart: (productId: number) => void;
-    removeFromCart: (productId: number) => void;
-    updateQuantity: (productId: number, quantity: number) => void;
+    decrementFromCart: (productId: string) => void;
+    removeFromCart: (productId: string) => void;
+    updateQuantity: (productId: string, quantity: number) => void;
     clearCart: () => void;
     getCartTotal: () => number;
     toggleCart: () => void;
@@ -48,7 +48,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         openCart();
     };
 
-    const decrementFromCart = (productId: number) => {
+    const decrementFromCart = (productId: string) => {
         setCartItems(prevItems => {
             const itemInCart = prevItems.find(item => item.id === productId);
             if (itemInCart && itemInCart.quantity > 1) {
@@ -60,11 +60,11 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         });
     };
 
-    const removeFromCart = (productId: number) => {
+    const removeFromCart = (productId: string) => {
         setCartItems(prevItems => prevItems.filter(item => item.id !== productId));
     };
 
-    const updateQuantity = (productId: number, quantity: number) => {
+    const updateQuantity = (productId: string, quantity: number) => {
         if (quantity <= 0) {
             removeFromCart(productId);
         } else {
@@ -102,4 +102,4 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
             {children}
         </CartContext.Provider>
     );
-}; 
+};
