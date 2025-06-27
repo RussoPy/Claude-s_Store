@@ -1,0 +1,18 @@
+/* Import Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@400;700&family=M+PLUS+Rounded+1c:wght@400;700&display=swap');
+
+body, button, input, textarea, select, a, p, span, div, li, ul, ol, table, th, td, label {
+  font-family: 'M PLUS Rounded 1c', Arial, sans-serif;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Heebo', 'M PLUS Rounded 1c', Arial, sans-serif;
+}
+
+/* General CSS resets and RTL support */
+html[dir="rtl"] body {
+  direction: rtl;
+  text-align: right;
+}
+
+/* Add any other general theme styles below */

@@ -4,9 +4,11 @@ import { CartContext } from '../context/CartContext';
 
 interface ProductCardProps {
     product: Product;
+    onProductAdd?: () => void;
+    onProductRemove?: () => void;
 }
 
-const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
+const ProductCard: React.FC<ProductCardProps> = ({ product, onProductAdd, onProductRemove }) => {
     const cartContext = useContext(CartContext);
 
     if (!cartContext) {
@@ -16,22 +18,32 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     const { cartItems, addToCart, decrementFromCart } = cartContext;
     const itemInCart = cartItems.find(item => item.id === product.id);
 
+    const handleAddToCart = () => {
+        addToCart(product);
+        if (onProductAdd) onProductAdd();
+    };
+
+    const handleRemoveFromCart = () => {
+        decrementFromCart(product.id);
+        if (onProductRemove) onProductRemove();
+    };
+
     return (
         <div className="product-card">
             <img src={product.image} alt={product.name} />
             <h3>{product.name}</h3>
-            <p>${product.price.toFixed(2)}</p>
+            <p>₪{product.price.toFixed(2)}</p>
             {itemInCart ? (
-                <div className="quantity-control">
-                    <button onClick={() => decrementFromCart(product.id)}>-</button>
-                    <span>{itemInCart.quantity}</span>
-                    <button onClick={() => addToCart(product)}>+</button>
+                <div className="quantity-control" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <button className="quantity-btn" style={{ fontSize: '0.9em', width: 28, height: 28, minWidth: 0, padding: 0 }} onClick={handleRemoveFromCart}>-</button>
+                    <span style={{ minWidth: 24, textAlign: 'center', display: 'inline-block' }}>{itemInCart.quantity}</span>
+                    <button className="quantity-btn" style={{ fontSize: '0.9em', width: 28, height: 28, minWidth: 0, padding: 0 }} onClick={() => { addToCart(product); if (onProductAdd) onProductAdd(); }}>+</button>
                 </div>
             ) : (
-                <button onClick={() => addToCart(product)}>Add to Cart</button>
+                <button onClick={handleAddToCart}>הוסף לעגלה</button>
             )}
         </div>
     );
 };
 
-export default ProductCard; 
+export default ProductCard;

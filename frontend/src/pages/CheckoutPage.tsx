@@ -5,34 +5,34 @@ const CheckoutPage = () => {
   const cartContext = useContext(CartContext);
 
   if (!cartContext) {
-    return <div>Loading...</div>;
+    return <div>טוען...</div>;
   }
 
   const { getCartTotal, clearCart } = cartContext;
 
   const handleCheckout = () => {
     // In a real app, you would integrate with a payment gateway here.
-    alert('Thank you for your order!');
+    alert('תודה על ההזמנה!');
     clearCart();
   };
 
   return (
     <div className="checkout-page">
-      <h1>Checkout</h1>
+      <h1>תשלום</h1>
       <div className="order-summary">
-        <h2>Order Summary</h2>
-        <p>Total: ${getCartTotal().toFixed(2)}</p>
+        <h2>סיכום הזמנה</h2>
+        <p>סה"כ: ₪{getCartTotal().toFixed(2)}</p>
       </div>
       <div className="checkout-form">
-        <h2>Shipping Information</h2>
+        <h2>פרטי משלוח</h2>
         <form>
-          <input type="text" placeholder="Full Name" required />
-          <input type="email" placeholder="Email" required />
-          <input type="text" placeholder="Address" required />
-          <input type="text" placeholder="City" required />
-          <input type="text" placeholder="Postal Code" required />
+          <input type="text" placeholder="שם מלא" required />
+          <input type="email" placeholder="אימייל" required />
+          <input type="text" placeholder="כתובת" required />
+          <input type="text" placeholder="עיר" required />
+          <input type="text" placeholder="מיקוד" required />
           <button type="button" onClick={handleCheckout}>
-            Place Order
+            בצע הזמנה
           </button>
         </form>
       </div>
@@ -40,4 +40,4 @@ const CheckoutPage = () => {
   );
 };
 
-export default CheckoutPage; 
+export default CheckoutPage;

@@ -9,15 +9,15 @@ const Header = () => {
     return (
         <header>
             <div className="logo">
-                <Link to="/">Foodies</Link>
+                <Link to="/">פודיז</Link>
             </div>
             <nav>
                 <Link to="/cart">
-                    Cart ({cartItemsCount})
+                    עגלה ({cartItemsCount})
                 </Link>
             </nav>
         </header>
     );
 };
 
-export default Header; 
+export default Header;

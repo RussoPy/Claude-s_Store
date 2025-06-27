@@ -2,20 +2,25 @@ import React, { useContext } from 'react';
 import { CartContext } from '../context/CartContext';
 import { Link } from 'react-router-dom';
 
-const CartPage = () => {
+interface CartPageProps {
+    onProductRemove?: () => void;
+    onProductAdd?: () => void;
+}
+
+const CartPage: React.FC<CartPageProps> = ({ onProductRemove, onProductAdd }) => {
     const cartContext = useContext(CartContext);
 
     if (!cartContext) {
-        return <div>Loading...</div>;
+        return <div>טוען...</div>;
     }
 
     const { cartItems, addToCart, decrementFromCart, removeFromCart, getCartTotal } = cartContext;
 
     return (
         <div className="cart-page">
-            <h1>Your Cart</h1>
+            <h1>העגלה שלך</h1>
             {cartItems.length === 0 ? (
-                <p>Your cart is empty.</p>
+                <p>העגלה ריקה.</p>
             ) : (
                 <>
                     <div className="cart-items">
@@ -24,21 +29,21 @@ const CartPage = () => {
                                 <img src={item.image} alt={item.name} />
                                 <div className="cart-item-details">
                                     <h3>{item.name}</h3>
-                                    <p>${item.price.toFixed(2)}</p>
-                                    <div className="quantity-control">
-                                        <button onClick={() => decrementFromCart(item.id)}>-</button>
-                                        <span>{item.quantity}</span>
-                                        <button onClick={() => addToCart(item)}>+</button>
+                                    <p>₪{item.price.toFixed(2)}</p>
+                                    <div className="quantity-control" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                        <button className="quantity-btn" style={{ fontSize: '0.9em', width: 28, height: 28, minWidth: 0, padding: 0 }} onClick={() => { decrementFromCart(item.id); if (onProductRemove) onProductRemove(); }}>-</button>
+                                        <span style={{ minWidth: 24, textAlign: 'center', display: 'inline-block' }}>{item.quantity}</span>
+                                        <button className="quantity-btn" style={{ fontSize: '0.9em', width: 28, height: 28, minWidth: 0, padding: 0 }} onClick={() => { addToCart(item); if (onProductAdd) onProductAdd(); }}>+</button>
                                     </div>
-                                    <button onClick={() => removeFromCart(item.id)}>Remove</button>
+                                    <button onClick={() => { removeFromCart(item.id); if (onProductRemove) onProductRemove(); }}>הסר</button>
                                 </div>
                             </div>
                         ))}
                     </div>
                     <div className="cart-summary">
-                        <h2>Total: ${getCartTotal().toFixed(2)}</h2>
+                        <h2>סה"כ: ₪{getCartTotal().toFixed(2)}</h2>
                         <Link to="/checkout">
-                            <button>Proceed to Checkout</button>
+                            <button>המשך לתשלום</button>
                         </Link>
                     </div>
                 </>
@@ -47,4 +52,4 @@ const CartPage = () => {
     );
 };
 
-export default CartPage; 
+export default CartPage;
