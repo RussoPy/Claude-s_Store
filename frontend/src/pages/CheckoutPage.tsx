@@ -49,7 +49,8 @@ const CheckoutPage = () => {
   const onApprove = (data: any, actions: any) => {
     return actions.order.capture().then(async (details: any) => {
       try {
-        const response = await fetch('/api/orders/', {
+        const backendUrl = process.env.REACT_APP_BACKEND_URL;
+        const response = await fetch(`${backendUrl}/api/orders/`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -63,7 +64,8 @@ const CheckoutPage = () => {
         const orderData = await response.json();
 
         if (response.ok) {
-          alert(`תודה על ההזמנה, ${details.payer.name.given_name}! מספר הזמנה: ${details.id}`);
+          const displayId = orderData.paypal_capture_id || details.id;
+          alert(`תודה על ההזמנה!\n\nההזמנה התקבלה בהצלחה.\n\nמספר עסקה לאישור:\n${displayId}`);
           clearCart();
         } else {
           throw new Error(orderData.message || 'שגיאה בשמירת ההזמנה');

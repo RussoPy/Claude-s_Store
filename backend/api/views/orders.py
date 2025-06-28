@@ -11,6 +11,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from django.core.mail import send_mail
 from django.conf import settings
+import requests # Will be used for PayPal API calls
 
 # --- Firebase Initialization ---
 # This setup is based on your populate_firestore.py script
@@ -48,6 +49,61 @@ def initialize_firebase():
             # In a real app, you might want to handle this more gracefully
             raise e
     return firestore.client()
+
+# --- PayPal Verification Functions ---
+
+PAYPAL_API_BASE = "https://api-m.sandbox.paypal.com" if settings.DEBUG else "https://api-m.paypal.com"
+
+def get_paypal_access_token():
+    """Get access token from PayPal."""
+    client_id = os.getenv("PAYPAL_CLIENT_ID")
+    client_secret = os.getenv("PAYPAL_CLIENT_SECRET")
+    
+    if not client_id or not client_secret:
+        raise ValueError("Missing PayPal API credentials in .env file.")
+
+    auth_url = f"{PAYPAL_API_BASE}/v1/oauth2/token"
+    headers = {"Accept": "application/json", "Accept-Language": "en_US"}
+    auth = (client_id, client_secret)
+    data = {"grant_type": "client_credentials"}
+    
+    try:
+        response = requests.post(auth_url, headers=headers, auth=auth, data=data)
+        response.raise_for_status()  # Raises an exception for bad responses (4xx or 5xx)
+        return response.json()["access_token"]
+    except requests.exceptions.RequestException as e:
+        print(f"Error getting PayPal access token: {e}")
+        return None
+
+def verify_paypal_payment(paypal_order_id):
+    """
+    Verify the payment with PayPal's API to ensure it's legitimate.
+    Returns the verified order details from PayPal or None if invalid.
+    """
+    access_token = get_paypal_access_token()
+    if not access_token:
+        return None
+
+    verify_url = f"{PAYPAL_API_BASE}/v2/checkout/orders/{paypal_order_id}"
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {access_token}",
+    }
+    
+    try:
+        response = requests.get(verify_url, headers=headers)
+        response.raise_for_status()
+        verified_order_data = response.json()
+        
+        # Check if the payment status is COMPLETED
+        if verified_order_data.get("status") == "COMPLETED":
+            return verified_order_data
+        else:
+            print(f"PayPal payment not completed. Status: {verified_order_data.get('status')}")
+            return None
+    except requests.exceptions.RequestException as e:
+        print(f"Error verifying PayPal payment: {e}")
+        return None
 
 def send_order_emails(order_data):
     """Helper function to send customer and admin emails."""
@@ -106,43 +162,72 @@ def send_order_emails(order_data):
 @permission_classes([AllowAny])
 def create_order(request):
     """
-    View to create a new order in Firestore after successful PayPal payment.
+    View to create a new order in Firestore after successful and VERIFIED PayPal payment.
     """
     if request.method == 'POST':
         try:
             db = initialize_firebase()
             data = json.loads(request.body)
             
-            paypal_details = data.get('paypalDetails')
+            paypal_order_id_from_client = data.get('paypalDetails', {}).get('id')
             cart_items = data.get('cartItems')
             
-            if not paypal_details or not cart_items:
+            if not paypal_order_id_from_client or not cart_items:
                 return JsonResponse({'status': 'error', 'message': 'Missing order data'}, status=400)
 
-            # --- For security, you should verify the payment with PayPal's API here ---
-            # This is a critical step that is omitted for brevity but necessary for production.
-            # You would take paypal_details.id and call PayPal's API to confirm the transaction.
+            # --- VERIFICATION STEP ---
+            # Instead of trusting the client, we verify the order with PayPal directly.
+            print(f"Verifying PayPal Order ID: {paypal_order_id_from_client}")
+            verified_paypal_order = verify_paypal_payment(paypal_order_id_from_client)
+
+            if not verified_paypal_order:
+                print(f"PayPal verification failed for Order ID: {paypal_order_id_from_client}")
+                return JsonResponse({'status': 'error', 'message': 'PayPal payment verification failed.'}, status=400)
             
-            # 1. Prepare the initial data without the Firestore ID
+            print(f"PayPal verification successful for Order ID: {paypal_order_id_from_client}")
+
+            # --- DATA FROM VERIFIED SOURCE ---
+            # Use the verified data from PayPal as the source of truth.
+            purchase_unit = verified_paypal_order.get('purchase_units', [{}])[0]
+            payer_info = verified_paypal_order.get('payer', {})
+
+            # Security Check: Compare client-side total with server-side verified total
+            client_total = sum(float(item['price']) * int(item['quantity']) for item in cart_items)
+            paypal_total = float(purchase_unit.get('amount', {}).get('value', '0'))
+
+            if not abs(client_total - paypal_total) < 0.01:
+                print(f"CRITICAL: Amount mismatch for Order {paypal_order_id_from_client}. Client: {client_total}, PayPal: {paypal_total}")
+                return JsonResponse({'status': 'error', 'message': 'Order total mismatch.'}, status=400)
+
+            # Extract the relevant IDs from the verified data.
+            try:
+                # This is the internal ID for the capture event.
+                capture_id = purchase_unit['payments']['captures'][0]['id']
+            except (KeyError, IndexError):
+                capture_id = 'N/A'
+                print(f"WARNING: Could not find capture ID for order {paypal_order_id_from_client}. Full purchase unit: {purchase_unit}")
+
+            # Prepare the data for Firestore using the verified data
             order_data = {
-                'paypal_order_id': paypal_details.get('id'),
-                'payer_name': paypal_details.get('payer', {}).get('name', {}).get('given_name', 'N/A'),
-                'payer_email': paypal_details.get('payer', {}).get('email_address', 'N/A'),
-                'payer_phone': paypal_details.get('payer', {}).get('phone', {}).get('phone_number', {}).get('national_number', 'N/A'),
-                'amount': paypal_details.get('purchase_units', [{}])[0].get('amount', {}),
-                'status': paypal_details.get('status'),
+                'paypal_order_id': verified_paypal_order.get('id'),
+                'paypal_capture_id': capture_id, # Changed from transaction_id
+                'payer_name': payer_info.get('name', {}).get('given_name', 'N/A'),
+                'payer_email': payer_info.get('email_address', 'N/A'),
+                'payer_phone': payer_info.get('phone', {}).get('phone_number', {}).get('national_number', 'N/A'),
+                'amount': purchase_unit.get('amount', {}),
+                'status': verified_paypal_order.get('status'),
                 'items': cart_items,
                 'created_at': datetime.datetime.now(datetime.timezone.utc)
             }
             
-            # 2. Add the document to Firestore to get its reference/ID
+            # Add the document to Firestore to get its reference/ID
             orders_collection = db.collection('orders')
             update_time, order_ref = orders_collection.add(order_data)
             
-            # 3. Now that we have the ID, add it to our data object
+            # Now that we have the ID, add it to our data object
             order_data['order_id'] = order_ref.id
             
-            # 4. Send emails with the complete data
+            # Send emails with the complete data
             try:
                 send_order_emails(order_data)
             except Exception as e:
@@ -150,8 +235,12 @@ def create_order(request):
                 # as the payment was successful.
                 print(f"CRITICAL: Could not send order emails for order {order_ref.id}. Error: {e}")
 
-            return JsonResponse({'status': 'success', 'order_id': order_ref.id})
+            # Return the Firestore Order ID and the PayPal Capture ID (which is searchable in the dashboard)
+            return JsonResponse({'status': 'success', 'firestore_order_id': order_ref.id, 'paypal_capture_id': capture_id})
             
+        except ValueError as e: # Catch specific error for missing creds
+            print(f"Configuration Error: {e}")
+            return JsonResponse({'status': 'error', 'message': 'Server configuration error.'}, status=500)
         except Exception as e:
             return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
     

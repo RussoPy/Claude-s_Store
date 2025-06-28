@@ -23,8 +23,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-_l4s8ip1!ocsxg*z92bt)3#8#b9a4^g=(+jft=-=p7hi7a&#kc'
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# The `DEBUG` flag is now controlled by an environment variable.
+# It defaults to `False` (safe for production) unless `DEBUG=True` is in the .env file.
+DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
 ALLOWED_HOSTS = []
 
@@ -127,7 +128,29 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-CORS_ALLOW_ALL_ORIGINS = True
+# CORS_ALLOW_ALL_ORIGINS = True # This is now replaced by the more secure settings below.
+
+# --- CORS Configuration ---
+# A more secure setup that uses environment variables to control allowed origins.
+CORS_ALLOW_ALL_ORIGINS = False
+
+if DEBUG:
+    # In development, we allow the local React app to make requests.
+    local_client_url = os.getenv('LOCALHOST')
+    if not local_client_url:
+        # This provides a clear error if the .env variable is missing during development.
+        raise ValueError("The 'LOCALHOST' environment variable must be set in your .env file for development.")
+    CORS_ALLOWED_ORIGINS = [local_client_url]
+else:
+    # In production, we only allow our live frontend domain.
+    prod_client_url = os.getenv('PRODUCTIONCLIENT')
+    if not prod_client_url:
+        # This is a critical check to ensure the production site is configured correctly.
+        raise ValueError("The 'PRODUCTIONCLIENT' environment variable must be set in your .env file for production.")
+    CORS_ALLOWED_ORIGINS = [prod_client_url]
+    # You might also want to set ALLOWED_HOSTS for production here
+    # e.g., ALLOWED_HOSTS = ['your-backend-api.onrender.com']
+
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
@@ -138,9 +161,14 @@ REST_FRAMEWORK = {
     )
 }
 
-# Email Configuration
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'  # Prints emails to console
-EMAIL_HOST = 'localhost'
-EMAIL_PORT = 1025
-DEFAULT_FROM_EMAIL = 'claudeShop <noreply@yourclaudeShop.com>'
-ADMIN_EMAIL = os.getenv('ADMIN_EMAIL', 'admin@example.com') # Add your admin email to .env
+# --- Email Configuration ---
+# Uses SendGrid for sending emails. In DEBUG mode, it uses SendGrid's sandbox,
+# which validates API calls without actually sending emails.
+SENDGRID_API_KEY = os.getenv('SENDGRID_API_KEY')
+EMAIL_BACKEND = 'sendgrid_backend.SendGridBackend'
+SENDGRID_SANDBOX_MODE_IN_DEBUG = True  # Use sandbox in DEBUG mode
+SENDGRID_ECHO_TO_STDOUT = True # Print email content to console in DEBUG mode
+
+# The email address that emails will be sent from. Must be a verified sender in SendGrid.
+DEFAULT_FROM_EMAIL = os.getenv('SENDGRID_FROM_EMAIL', 'noreply@yourclaudeShop.com')
+ADMIN_EMAIL = os.getenv('ADMIN_EMAIL', 'admin@example.com')
