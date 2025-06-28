@@ -30,14 +30,6 @@ const Footer = () => {
                     <p>דוא"ל: <a href="mailto:shmalze.123@gmail.com" rel="noopener noreferrer">shmalze.123@gmail.com</a></p>
                     <p>כתובת: <a href="https://maps.google.com/?q=רח' הכרמל 5, תל אביב" target="_blank" rel="noopener noreferrer">רח' הכרמל 5, תל אביב</a></p>
                 </div>
-                <div className="footer-section">
-                    <h4>עקבו אחרינו</h4>
-                    <div className="footer-socials">
-                        <a href="#" aria-label="פייסבוק"><span role="img" aria-label="facebook">📘</span></a>
-                        <a href="#" aria-label="אינסטגרם"><span role="img" aria-label="instagram">📸</span></a>
-                        <a href="#" aria-label="וואטסאפ"><span role="img" aria-label="whatsapp">💬</span></a>
-                    </div>
-                </div>
             </div>
             <div className="footer-bottom">
                 <p>© {new Date().getFullYear()} המעדיה של קלוד בע"מ — כל הזכויות שמורות.</p>

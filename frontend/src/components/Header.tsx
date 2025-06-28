@@ -31,7 +31,7 @@ const Header = () => {
     return (
         <header className="header-main">
             <div className="header-content">
-                <img src="/claude-logo.png" alt="לוגו" className="header-logo-img" onClick={handleLogoClick} />
+                <img src="/claude-logo.png" alt="לוגו" className="header-logo-img center-logo" onClick={handleLogoClick} />
                 <h1 className="header-title">
                     <Link to="/" style={{ color: 'inherit', textDecoration: 'none' }}>המעדניה של קלוד</Link>
                 </h1>
