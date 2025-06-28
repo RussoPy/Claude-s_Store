@@ -1,6 +1,7 @@
 import React, { useContext, useEffect } from 'react';
 import { CartContext } from '../context/CartContext';
 import { PayPalScriptProvider, PayPalButtons, usePayPalScriptReducer } from "@paypal/react-paypal-js";
+import { useNavigate } from 'react-router-dom';
 
 // Custom component to handle the loading state of the PayPal script
 const PayPalCheckoutButton = ({ createOrder, onApprove, onError }: any) => {
@@ -26,6 +27,7 @@ const PayPalCheckoutButton = ({ createOrder, onApprove, onError }: any) => {
 
 const CheckoutPage = () => {
   const cartContext = useContext(CartContext);
+  const navigate = useNavigate();
 
   if (!cartContext) {
     return <div>טוען...</div>;
@@ -67,6 +69,7 @@ const CheckoutPage = () => {
           const displayId = orderData.paypal_capture_id || details.id;
           alert(`תודה על ההזמנה!\n\nההזמנה התקבלה בהצלחה.\n\nמספר עסקה לאישור:\n${displayId}`);
           clearCart();
+          navigate('/');
         } else {
           throw new Error(orderData.message || 'שגיאה בשמירת ההזמנה');
         }

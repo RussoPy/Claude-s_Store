@@ -164,9 +164,9 @@ REST_FRAMEWORK = {
 # --- Email Configuration ---
 # Uses SendGrid for sending emails. In DEBUG mode, it uses SendGrid's sandbox,
 # which validates API calls without actually sending emails.
-SENDGRID_API_KEY = os.getenv('SENDGRID_API_KEY')
-EMAIL_BACKEND = 'sendgrid_backend.SendGridBackend'
-SENDGRID_SANDBOX_MODE_IN_DEBUG = True  # Use sandbox in DEBUG mode
+EMAIL_BACKEND = "sendgrid_backend.SendgridBackend"
+SENDGRID_API_KEY = os.environ.get("SENDGRID_API_KEY")
+SENDGRID_SANDBOX_MODE_IN_DEBUG = False # Will not send real emails in DEBUG mode
 SENDGRID_ECHO_TO_STDOUT = True # Print email content to console in DEBUG mode
 
 # The email address that emails will be sent from. Must be a verified sender in SendGrid.

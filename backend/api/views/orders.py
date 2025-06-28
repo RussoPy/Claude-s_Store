@@ -9,7 +9,7 @@ import json
 import datetime
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
-from django.core.mail import send_mail
+from django.core.mail import EmailMultiAlternatives
 from django.conf import settings
 import requests # Will be used for PayPal API calls
 
@@ -106,57 +106,143 @@ def verify_paypal_payment(paypal_order_id):
         return None
 
 def send_order_emails(order_data):
-    """Helper function to send customer and admin emails."""
+    """Helper function to send customer and admin emails in a structured HTML format."""
     
-    # Format the items for the email body
-    items_list = ""
+    # --- Data Preparation ---
+    items_list_text = ""
+    items_list_html = ""
     for item in order_data.get('items', []):
-        items_list += f"- {item['name']} (Quantity: {item['quantity']}) - ₪{item['price']:.2f}\n"
+        item_line_text = f"- {item['name']} (כמות: {item['quantity']}) - ₪{float(item['price']):.2f}"
+        items_list_text += item_line_text + "\n"
+        items_list_html += f"<li>{item_line_text}</li>"
+
+    order_id_for_email = order_data.get('paypal_capture_id', order_data.get('order_id', 'N/A'))
+    total_price = float(order_data['amount']['value'])
+    customer_name = order_data.get('customer_name', 'לקוח') 
+    payer_email = order_data.get('payer_email')
+    payer_phone = order_data.get('payer_phone', 'לא צוין')
+
+    # --- Details for Admin ---
+    payment_time_raw = order_data.get('payment_time')
+    payment_time_formatted = 'לא צוין'
+    if payment_time_raw:
+        try:
+            payment_dt = datetime.datetime.fromisoformat(payment_time_raw.replace("Z", "+00:00"))
+            payment_time_formatted = payment_dt.strftime('%d/%m/%Y %H:%M:%S') + " (UTC)"
+        except (ValueError, TypeError):
+             payment_time_formatted = str(payment_time_raw)
+
+    shipping_address_obj = order_data.get('shipping_address', {})
+    address_parts = [
+        shipping_address_obj.get('address_line_1'), # Street
+        shipping_address_obj.get('admin_area_2'), # City
+        shipping_address_obj.get('admin_area_1'), # State
+        shipping_address_obj.get('postal_code'),
+        shipping_address_obj.get('country_code')
+    ]
+    shipping_address_text = ", ".join(filter(None, address_parts))
+    if not shipping_address_text:
+        shipping_address_text = 'לא צוינה'
 
     # --- Email to Customer ---
-    subject_customer = f"ההזמנה שלך מ-claudeShop אושרה! מספר הזמנה: {order_data['order_id']}"
-    message_customer = f"""
-    שלום {order_data['payer_name']},
+    subject_customer = f"אישור הזמנה מ-claudeShop! מספר הזמנה: {order_id_for_email}"
+    
+    text_content_customer = f"""
+    שלום {customer_name},
 
-    תודה על הזמנתך! קיבלנו את הזמנתך והיא כעת בטיפול.
+    תודה רבה על הזמנתך! קיבלנו אותה והיא בטיפול.
 
     סיכום הזמנה:
-    {items_list}
-    סך הכל: ₪{float(order_data['amount']['value']):.2f}
+    {items_list_text}
+    סך הכל לתשלום: ₪{total_price:.2f}
+
+    מספר ההזמנה שלך למעקב הוא: {order_id_for_email}
 
     תודה שבחרת ב-claudeShop!
+    צוות claudeShop
     """
-    send_mail(
+
+    html_content_customer = f"""
+    <div dir="rtl" style="font-family: Arial, sans-serif; text-align: right; line-height: 1.6;">
+        <h2>שלום {customer_name},</h2>
+        <p>תודה רבה על הזמנתך! קיבלנו אותה והיא כעת בטיפול.</p>
+        <h3>סיכום הזמנה</h3>
+        <ul style="list-style-type: none; padding: 0;">
+            {items_list_html}
+        </ul>
+        <p style="font-size: 1.1em;"><strong>סך הכל לתשלום: ₪{total_price:.2f}</strong></p>
+        <p><strong>מספר ההזמנה שלך למעקב הוא:</strong> {order_id_for_email}</p>
+        <hr>
+        <p>תודה שבחרת בנו,</p>
+        <p>צוות claudeShop</p>
+    </div>
+    """
+    
+    msg_customer = EmailMultiAlternatives(
         subject=subject_customer,
-        message=message_customer,
+        body=text_content_customer,
         from_email=settings.DEFAULT_FROM_EMAIL,
-        recipient_list=[order_data['payer_email']],
-        fail_silently=False,
+        to=[payer_email]
     )
-    print(f"Customer confirmation email sent to {order_data['payer_email']}")
+    msg_customer.attach_alternative(html_content_customer, "text/html")
+    msg_customer.send(fail_silently=False)
+
 
     # --- Email to Admin ---
-    subject_admin = f"הזמנה חדשה התקבלה! מספר הזמנה: {order_data['order_id']}"
-    message_admin = f"""
+    subject_admin = f"התקבלה הזמנה חדשה! מספר הזמנה: {order_id_for_email}"
+
+    text_content_admin = f"""
     התקבלה הזמנה חדשה!
 
-    פרטי הזמנה:
-    מספר הזמנה: {order_data['order_id']}
-    שם המזמין: {order_data['payer_name']} ({order_data['payer_email']})
-    טלפון: {order_data.get('payer_phone', 'N/A')}
+    פרטי ההזמנה:
+    מספר הזמנה: {order_id_for_email}
+    שעת תשלום: {payment_time_formatted}
+
+    פרטי הלקוח:
+    שם: {customer_name}
+    אימייל: {payer_email}
+    טלפון: {payer_phone}
+    כתובת למשלוח: {shipping_address_text}
 
     מוצרים:
-    {items_list}
-    סך הכל: ₪{float(order_data['amount']['value']):.2f}
+    {items_list_text}
+    סך הכל: ₪{total_price:.2f}
     """
-    send_mail(
+    
+    html_content_admin = f"""
+    <div dir="rtl" style="font-family: Arial, sans-serif; text-align: right; line-height: 1.6;">
+        <h2>התקבלה הזמנה חדשה!</h2>
+        
+        <h3>פרטי ההזמנה</h3>
+        <ul style="list-style-type: none; padding: 0; margin-right: 0; padding-right: 0;">
+            <li><strong>מספר הזמנה:</strong> {order_id_for_email}</li>
+            <li><strong>שעת תשלום:</strong> {payment_time_formatted}</li>
+        </ul>
+
+        <h3>פרטי הלקוח</h3>
+        <ul style="list-style-type: none; padding: 0; margin-right: 0; padding-right: 0;">
+            <li><strong>שם:</strong> {customer_name}</li>
+            <li><strong>אימייל:</strong> {payer_email}</li>
+            <li><strong>טלפון ליצירת קשר:</strong> {payer_phone}</li>
+            <li><strong>כתובת למשלוח:</strong> {shipping_address_text}</li>
+        </ul>
+
+        <h3>פירוט המוצרים:</h3>
+        <ul style="list-style-type: none; padding: 0; margin-right: 0; padding-right: 0;">
+            {items_list_html}
+        </ul>
+        <p style="font-size: 1.1em;"><strong>סך הכל: ₪{total_price:.2f}</strong></p>
+    </div>
+    """
+
+    msg_admin = EmailMultiAlternatives(
         subject=subject_admin,
-        message=message_admin,
+        body=text_content_admin,
         from_email=settings.DEFAULT_FROM_EMAIL,
-        recipient_list=[settings.ADMIN_EMAIL],
-        fail_silently=False,
+        to=[settings.ADMIN_EMAIL]
     )
-    print(f"Admin notification email sent to {settings.ADMIN_EMAIL}")
+    msg_admin.attach_alternative(html_content_admin, "text/html")
+    msg_admin.send(fail_silently=False)
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -199,25 +285,39 @@ def create_order(request):
                 print(f"CRITICAL: Amount mismatch for Order {paypal_order_id_from_client}. Client: {client_total}, PayPal: {paypal_total}")
                 return JsonResponse({'status': 'error', 'message': 'Order total mismatch.'}, status=400)
 
-            # Extract the relevant IDs from the verified data.
+            # Extract the relevant IDs and timestamps from the verified data.
             try:
-                # This is the internal ID for the capture event.
-                capture_id = purchase_unit['payments']['captures'][0]['id']
+                capture_details = purchase_unit.get('payments', {}).get('captures', [{}])[0]
+                capture_id = capture_details.get('id')
+                payment_time = capture_details.get('create_time')
             except (KeyError, IndexError):
                 capture_id = 'N/A'
-                print(f"WARNING: Could not find capture ID for order {paypal_order_id_from_client}. Full purchase unit: {purchase_unit}")
+                payment_time = None
+                print(f"WARNING: Could not find capture details for order {paypal_order_id_from_client}.")
+
+            # Extract full name and address details
+            shipping_info = purchase_unit.get('shipping', {})
+            shipping_address_obj = shipping_info.get('address', {})
+            
+            payer_name_obj = payer_info.get('name', {})
+            payer_full_name = f"{payer_name_obj.get('given_name', '')} {payer_name_obj.get('surname', '')}".strip()
+            
+            # The primary customer name should be from the shipping details if available, otherwise use payer name.
+            customer_name_for_order = shipping_info.get('name', {}).get('full_name', payer_full_name) or 'N/A'
 
             # Prepare the data for Firestore using the verified data
             order_data = {
                 'paypal_order_id': verified_paypal_order.get('id'),
-                'paypal_capture_id': capture_id, # Changed from transaction_id
-                'payer_name': payer_info.get('name', {}).get('given_name', 'N/A'),
+                'paypal_capture_id': capture_id,
+                'customer_name': customer_name_for_order, # Replaces payer_name
                 'payer_email': payer_info.get('email_address', 'N/A'),
                 'payer_phone': payer_info.get('phone', {}).get('phone_number', {}).get('national_number', 'N/A'),
                 'amount': purchase_unit.get('amount', {}),
                 'status': verified_paypal_order.get('status'),
                 'items': cart_items,
-                'created_at': datetime.datetime.now(datetime.timezone.utc)
+                'created_at': datetime.datetime.now(datetime.timezone.utc),
+                'payment_time': payment_time,
+                'shipping_address': shipping_address_obj,
             }
             
             # Add the document to Firestore to get its reference/ID
@@ -233,7 +333,7 @@ def create_order(request):
             except Exception as e:
                 # Log this error but don't fail the entire request,
                 # as the payment was successful.
-                print(f"CRITICAL: Could not send order emails for order {order_ref.id}. Error: {e}")
+                print(f"CRITICAL: Could not send order emails for order {order_data.get('order_id', 'N/A')}. PayPal Capture ID: {order_data.get('paypal_capture_id', 'N/A')}. Error: {e}")
 
             # Return the Firestore Order ID and the PayPal Capture ID (which is searchable in the dashboard)
             return JsonResponse({'status': 'success', 'firestore_order_id': order_ref.id, 'paypal_capture_id': capture_id})
