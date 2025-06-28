@@ -1,7 +1,6 @@
-import React, { useState } from 'react';
+import React from 'react';
 import CustomerHome from './CustomerHome';
 import AdminHome from './AdminHome';
-import { Product } from '../types/Product';
 
 interface HomePageProps {
     onProductAdd?: () => void;
@@ -11,31 +10,21 @@ interface HomePageProps {
 }
 
 const HomePage: React.FC<HomePageProps> = ({ onProductAdd, onProductRemove, isAdmin, authLoading }) => {
-    const [hiddenCategories, setHiddenCategories] = useState<string[]>([]);
-    const [hiddenProducts, setHiddenProducts] = useState<string[]>([]);
-
     if (authLoading) {
         return <div>Loading...</div>;
-        }
+    }
 
     return (
         <div>
             {isAdmin ? (
-                <AdminHome
-                    hiddenCategories={hiddenCategories}
-                    setHiddenCategories={setHiddenCategories}
-                    hiddenProducts={hiddenProducts}
-                    setHiddenProducts={setHiddenProducts}
-                />
+                <AdminHome />
             ) : (
                 <CustomerHome
                     onProductAdd={onProductAdd}
                     onProductRemove={onProductRemove}
-                    hiddenCategories={hiddenCategories}
-                    hiddenProducts={hiddenProducts}
                 />
             )}
-            </div>
+        </div>
     );
 };
 

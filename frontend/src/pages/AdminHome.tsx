@@ -7,7 +7,7 @@ import { db, auth, storage } from '../firebase';
 import { collection, getDocs, QueryDocumentSnapshot, DocumentData, doc, deleteDoc, addDoc, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import './AdminHome.css';
+import '../AdminHome.css';
 
 const EditableField = ({ value, onSave }: { value: string | number, onSave: (newValue: string | number) => void }) => {
     const [isEditing, setIsEditing] = useState(false);
@@ -41,12 +41,7 @@ const EditableField = ({ value, onSave }: { value: string | number, onSave: (new
     );
 };
 
-const AdminHome: React.FC<{
-    hiddenCategories: string[];
-    setHiddenCategories: React.Dispatch<React.SetStateAction<string[]>>;
-    hiddenProducts: string[];
-    setHiddenProducts: React.Dispatch<React.SetStateAction<string[]>>;
-}> = ({ hiddenCategories, setHiddenCategories, hiddenProducts, setHiddenProducts }) => {
+const AdminHome: React.FC = () => {
     const productsRef = useRef<HTMLDivElement>(null);
     const [allProducts, setAllProducts] = useState<Product[]>([]);
     const [products, setProducts] = useState<Product[]>([]);
@@ -90,11 +85,18 @@ const AdminHome: React.FC<{
                         image: data.image || data.imageUrl || '',
                         categoryId,
                         quantity: data.quantity ?? 0,
+                        isAvailable: data.isAvailable !== false,
+                        isActive: data.isActive !== false,
                     } as Product;
                 });
-                const categoriesData: Category[] = categoriesSnap.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => ({ id: doc.id, ...doc.data() } as Category));
+                const categoriesData: Category[] = categoriesSnap.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => ({
+                    id: doc.id,
+                    ...doc.data(),
+                    isActive: doc.data().isActive !== false
+                } as Category));
+
                 setAllProducts(productsData);
-                setProducts(productsData.sort((a, b) => a.name.localeCompare(b.name)));
+                setProducts(productsData.filter(p => p.isActive).sort((a, b) => a.name.localeCompare(b.name)));
                 setCategories(categoriesData);
                 setLoading(false);
                 setCatLoading(false);
@@ -111,16 +113,21 @@ const AdminHome: React.FC<{
     }, []);
 
     useEffect(() => {
-        if (selectedCategory === null) {
-            setProducts(allProducts.sort((a, b) => a.name.localeCompare(b.name)));
-        } else {
-            setProducts(allProducts.filter(p => p.categoryId === selectedCategory).sort((a, b) => a.name.localeCompare(b.name)));
-        }
-    }, [selectedCategory, allProducts]);
+        const activeCategoryIds = new Set(categories.filter(c => c.isActive).map(c => c.id));
+        const activeProducts = allProducts.filter(p => p.isActive && activeCategoryIds.has(p.categoryId));
 
-    const handleDeleteProduct = (productId: string) => {
+        if (selectedCategory === null) {
+            setProducts(activeProducts.sort((a, b) => a.name.localeCompare(b.name)));
+        } else {
+            setProducts(activeProducts.filter(p => p.categoryId === selectedCategory).sort((a, b) => a.name.localeCompare(b.name)));
+        }
+    }, [selectedCategory, allProducts, categories]);
+
+    const handleDeleteProduct = async (productId: string) => {
         if (window.confirm('Are you sure you want to hide this product?')) {
-            setHiddenProducts(prev => [...prev, productId]);
+            const productRef = doc(db, 'products', productId);
+            await updateDoc(productRef, { isActive: false });
+            fetchProducts();
         }
     };
 
@@ -136,13 +143,13 @@ const AdminHome: React.FC<{
     const handleAddCategory = async () => {
         const categoryName = prompt("Enter the new category name:");
         if (categoryName) {
-            if (categories.some(cat => cat.name.toLowerCase() === categoryName.toLowerCase())) {
-                alert("A category with this name already exists.");
+            if (categories.some(cat => cat.name.toLowerCase() === categoryName.toLowerCase() && cat.isActive)) {
+                alert("An active category with this name already exists.");
                 return;
             }
             try {
-                await addDoc(collection(db, 'categories'), { name: categoryName });
-                fetchProducts(); // Refetch to show the new category
+                await addDoc(collection(db, 'categories'), { name: categoryName, isActive: true });
+                fetchProducts();
             } catch (error) {
                 console.error("Error adding category: ", error);
                 setError("Failed to add category.");
@@ -150,52 +157,38 @@ const AdminHome: React.FC<{
         }
     };
 
-    const handleHideCategory = (categoryId: string) => {
-        setHiddenCategories(prev => [...prev, categoryId]);
+    const handleHideCategory = async (categoryId: string) => {
+        const categoryRef = doc(db, 'categories', categoryId);
+        await updateDoc(categoryRef, { isActive: false });
+        if (selectedCategory === categoryId) {
+            setSelectedCategory(null);
+        }
+        fetchProducts();
     };
 
     const handleCategoryContextMenu = (e: React.MouseEvent, categoryId: string) => {
-        e.preventDefault(); // Prevent the default context menu
+        e.preventDefault();
         if (window.confirm(`Are you sure you want to hide this category?`)) {
             handleHideCategory(categoryId);
         }
     };
 
-    const handleRestoreCategory = (categoryId: string) => {
-        setHiddenCategories(prev => prev.filter(id => id !== categoryId));
+    const handleRestoreCategory = async (categoryId: string) => {
+        const categoryRef = doc(db, 'categories', categoryId);
+        await updateDoc(categoryRef, { isActive: true });
+        fetchProducts();
     };
 
     const handleRestoreProduct = async (productId: string) => {
-        const productToRestore = allProducts.find(p => p.id === productId);
-        if (productToRestore) {
-            if (window.confirm(`Are you sure you want to restore the product "${productToRestore.name}"? This will create a new product and remove the old one.`)) {
-                try {
-                    // Create a new product from the old one's data
-                    const { id, ...productData } = productToRestore;
-                    await addDoc(collection(db, 'products'), {
-                        ...productData,
-                        categoryRef: doc(db, 'categories', productData.categoryId)
-                    });
-
-                    // Permanently delete the old product
-                    await deleteDoc(doc(db, 'products', productId));
-
-                    // Update local state to remove from trash view and refetch all data
-                    setHiddenProducts(prev => prev.filter(id => id !== productId));
-                    fetchProducts();
-                } catch (error) {
-                    console.error("Error restoring product: ", error);
-                    setError("Failed to restore product.");
-                }
-            }
-        }
+        const productRef = doc(db, 'products', productId);
+        await updateDoc(productRef, { isActive: true });
+        fetchProducts();
     };
 
-    const handleFieldUpdate = async (productId: string, field: keyof Product, value: string | number) => {
+    const handleFieldUpdate = async (productId: string, field: keyof Product, value: string | number | boolean) => {
         try {
             const productRef = doc(db, 'products', productId);
             await updateDoc(productRef, { [field]: value });
-            // Optimistically update the UI, or refetch
             setAllProducts(prev => prev.map(p => p.id === productId ? { ...p, [field]: value } : p));
         } catch (error) {
             console.error("Error updating field: ", error);
@@ -225,6 +218,10 @@ const AdminHome: React.FC<{
         }
     };
 
+    const activeCategories = categories.filter(c => c.isActive);
+    const inactiveCategories = categories.filter(c => !c.isActive);
+    const inactiveProducts = allProducts.filter(p => !p.isActive);
+
     return (
         <>
             <div className="alert alert-info" style={{ borderRadius: 0, textAlign: 'center', position: 'sticky', top: 0, zIndex: 1021, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '20px' }}>
@@ -249,7 +246,7 @@ const AdminHome: React.FC<{
                         >
                             הכל
                         </button>
-                        {!catLoading && categories.filter(c => !hiddenCategories.includes(c.id)).map(cat => (
+                        {!catLoading && activeCategories.map(cat => (
                             <button
                                 key={cat.id}
                                 className={`category-btn${selectedCategory === cat.id ? ' selected' : ''}`}
@@ -271,7 +268,7 @@ const AdminHome: React.FC<{
                         accept="image/*"
                     />
                     <div className="admin-product-list">
-                        {products.filter(p => !hiddenCategories.includes(p.categoryId) && !hiddenProducts.includes(p.id)).map(product => (
+                        {products.map(product => (
                             <div key={product.id} className="admin-product-row">
                                 <div className="product-image-container">
                                     <img src={product.image} alt={product.name} className="product-image-thumb" />
@@ -285,8 +282,13 @@ const AdminHome: React.FC<{
                                 <div className="product-description">
                                     <EditableField value={product.description} onSave={(newValue) => handleFieldUpdate(product.id, 'description', newValue as string)} />
                                 </div>
-                                <div className="product-quantity">
-                                    <EditableField value={product.quantity ?? 0} onSave={(newValue) => handleFieldUpdate(product.id, 'quantity', newValue as number)} />
+                                <div className="product-availability">
+                                    <input
+                                        type="checkbox"
+                                        checked={product.isAvailable}
+                                        onChange={(e) => handleFieldUpdate(product.id, 'isAvailable', e.target.checked)}
+                                    />
+                                    <label>{product.isAvailable ? 'זמין' : 'אזל מהמלאי'}</label>
                                 </div>
                                 <div className="product-price">
                                     ₪<EditableField value={product.price} onSave={(newValue) => handleFieldUpdate(product.id, 'price', newValue as number)} />
@@ -307,7 +309,7 @@ const AdminHome: React.FC<{
                     onHide={() => setShowModal(false)}
                     onSave={handleSave}
                     product={editingProduct}
-                    categories={categories}
+                    categories={activeCategories}
                     allProducts={allProducts}
                 />
             )}
@@ -315,9 +317,9 @@ const AdminHome: React.FC<{
             <CustomModal show={showTrash} onHide={() => setShowTrash(false)} title="פריטים שנמחקו">
                 <div className="trash-section">
                     <h5>קטגוריות</h5>
-                    {hiddenCategories.length === 0 ? <p>אין קטגוריות מחוקות</p> : null}
+                    {inactiveCategories.length === 0 ? <p>אין קטגוריות מחוקות</p> : null}
                     <ul className="list-unstyled">
-                        {categories.filter(c => hiddenCategories.includes(c.id)).map(cat => (
+                        {inactiveCategories.map(cat => (
                             <li key={cat.id} className="d-flex justify-content-between align-items-center mb-2">
                                 {cat.name}
                                 <button onClick={() => handleRestoreCategory(cat.id)} className="btn btn-sm btn-outline-primary">שחזר</button>
@@ -328,9 +330,9 @@ const AdminHome: React.FC<{
                 <hr />
                 <div className="trash-section">
                     <h5>מוצרים</h5>
-                    {hiddenProducts.length === 0 ? <p>אין מוצרים מחוקים</p> : null}
+                    {inactiveProducts.length === 0 ? <p>אין מוצרים מחוקים</p> : null}
                     <ul className="list-unstyled">
-                        {allProducts.filter(p => hiddenProducts.includes(p.id)).map(prod => (
+                        {inactiveProducts.map(prod => (
                             <li key={prod.id} className="d-flex justify-content-between align-items-center mb-2">
                                 {prod.name}
                                 <button onClick={() => handleRestoreProduct(prod.id)} className="btn btn-sm btn-outline-primary">שחזר</button>

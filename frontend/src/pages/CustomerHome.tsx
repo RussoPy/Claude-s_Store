@@ -9,11 +9,9 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 interface CustomerHomeProps {
     onProductAdd?: () => void;
     onProductRemove?: () => void;
-    hiddenCategories: string[];
-    hiddenProducts: string[];
 }
 
-const CustomerHome: React.FC<CustomerHomeProps> = ({ onProductAdd, onProductRemove, hiddenCategories, hiddenProducts }) => {
+const CustomerHome: React.FC<CustomerHomeProps> = ({ onProductAdd, onProductRemove }) => {
     const productsRef = useRef<HTMLDivElement>(null);
     const [allProducts, setAllProducts] = useState<Product[]>([]);
     const [products, setProducts] = useState<Product[]>([]);
@@ -35,28 +33,42 @@ const CustomerHome: React.FC<CustomerHomeProps> = ({ onProductAdd, onProductRemo
             getDocs(collection(db, 'categories'))
         ])
             .then(([productsSnap, categoriesSnap]) => {
-                const productsData: Product[] = productsSnap.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => {
-                    const data = doc.data();
-                    let categoryId = '';
-                    if (data.categoryRef && typeof data.categoryRef === 'object' && 'id' in data.categoryRef) {
-                        categoryId = data.categoryRef.id;
-                    } else if (typeof data.categoryRef === 'string') {
-                        const parts = data.categoryRef.split('/');
-                        categoryId = parts[parts.length - 1];
-                    }
-                    return {
+                const productsData: Product[] = productsSnap.docs
+                    .map((doc: QueryDocumentSnapshot<DocumentData>) => {
+                        const data = doc.data();
+                        let categoryId = '';
+                        if (data.categoryRef && typeof data.categoryRef === 'object' && 'id' in data.categoryRef) {
+                            categoryId = data.categoryRef.id;
+                        } else if (typeof data.categoryRef === 'string') {
+                            const parts = data.categoryRef.split('/');
+                            categoryId = parts[parts.length - 1];
+                        }
+                        return {
+                            id: doc.id,
+                            name: data.name,
+                            description: data.description,
+                            price: data.price,
+                            image: data.image || data.imageUrl || '',
+                            categoryId,
+                            isAvailable: data.isAvailable !== false,
+                            isActive: data.isActive !== false,
+                        } as Product;
+                    });
+
+                const categoriesData: Category[] = categoriesSnap.docs
+                    .map((doc: QueryDocumentSnapshot<DocumentData>) => ({
                         id: doc.id,
-                        name: data.name,
-                        description: data.description,
-                        price: data.price,
-                        image: data.image || data.imageUrl || '',
-                        categoryId,
-                    } as Product;
-                });
-                const categoriesData: Category[] = categoriesSnap.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => ({ id: doc.id, ...doc.data() } as Category));
-                setAllProducts(productsData);
-                setProducts(productsData);
-                setCategories(categoriesData);
+                        ...doc.data(),
+                        isActive: doc.data().isActive !== false
+                    } as Category));
+
+                const activeCategories = categoriesData.filter(c => c.isActive);
+                const activeCategoryIds = new Set(activeCategories.map(c => c.id));
+                const activeProducts = productsData.filter(p => p.isActive && activeCategoryIds.has(p.categoryId));
+
+                setAllProducts(activeProducts);
+                setProducts(activeProducts);
+                setCategories(activeCategories);
                 setLoading(false);
                 setCatLoading(false);
             })
@@ -138,7 +150,7 @@ const CustomerHome: React.FC<CustomerHomeProps> = ({ onProductAdd, onProductRemo
                     >
                         הכל
                     </button>
-                    {!catLoading && categories.filter(c => !hiddenCategories.includes(c.id)).map(cat => (
+                    {!catLoading && categories.map(cat => (
                         <button
                             key={cat.id}
                             className={`category-btn${selectedCategory === cat.id ? ' selected' : ''}`}
@@ -152,8 +164,15 @@ const CustomerHome: React.FC<CustomerHomeProps> = ({ onProductAdd, onProductRemo
                 {loading && <p>טוען מוצרים...</p>}
                 {error && <p style={{ color: 'red' }}>{error}</p>}
                 <div className="product-list">
-                    {products.filter(p => !hiddenCategories.includes(p.categoryId) && !hiddenProducts.includes(p.id)).map(product => (
-                        <ProductCard key={product.id} product={product} onProductAdd={onProductAdd} onProductRemove={onProductRemove} />
+                    {products.map(product => (
+                        <ProductCard
+                            key={product.id}
+                            product={product}
+                            onProductAdd={product.isAvailable ? onProductAdd : undefined}
+                            onProductRemove={onProductRemove}
+                            disabled={!product.isAvailable}
+                            label={!product.isAvailable ? 'אזל מהמלאי' : undefined}
+                        />
                     ))}
                 </div>
             </div>

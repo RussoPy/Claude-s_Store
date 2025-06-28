@@ -1,0 +1,21 @@
+[
+    {
+        "origin": [
+            "http://localhost:3000",
+            "https://claude-s-store.web.app"
+        ],
+        "method": [
+            "GET",
+            "POST",
+            "PUT",
+            "DELETE",
+            "OPTIONS"
+        ],
+        "responseHeader": [
+            "Content-Type",
+            "Authorization",
+            "x-goog-resumable"
+        ],
+        "maxAgeSeconds": 3600
+    }
+]

@@ -22,7 +22,9 @@ const ProductForm: React.FC<ProductFormProps> = ({ show, onHide, onSave, product
         price: 0,
         image: '',
         categoryId: '',
-        quantity: 0
+        quantity: 0,
+        isAvailable: true,
+        isActive: true
     });
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [imageFile, setImageFile] = useState<File | null>(null);
@@ -32,7 +34,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ show, onHide, onSave, product
         if (product) {
             setFormData(product);
         } else {
-            setFormData({ name: '', description: '', price: 0, image: '', categoryId: '', quantity: 0 });
+            setFormData({ name: '', description: '', price: 0, image: '', categoryId: '', quantity: 0, isAvailable: true, isActive: true });
         }
         setImageFile(null);
         setError(null);
@@ -73,7 +75,9 @@ const ProductForm: React.FC<ProductFormProps> = ({ show, onHide, onSave, product
             const dataToSave = {
                 ...formData,
                 image: imageUrl,
-                categoryRef: doc(db, 'categories', formData.categoryId!)
+                categoryRef: doc(db, 'categories', formData.categoryId!),
+                isActive: formData.isActive !== false,
+                isAvailable: formData.isAvailable !== false
             };
 
             if (product) {

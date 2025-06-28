@@ -6,4 +6,6 @@ export interface Product {
     image: string;
     categoryId: string;
     quantity?: number;
+    isAvailable?: boolean;
+    isActive?: boolean;
 }
