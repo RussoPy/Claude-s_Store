@@ -127,7 +127,7 @@ const HomePage: React.FC<HomePageProps> = ({ onProductAdd, onProductRemove }) =>
                 </div>
             </div>
             <div className="product-list-container" ref={productsRef}>
-                <h1>התפריט שלנו</h1>
+                <h1 className="menu-title">התפריט שלנו</h1>
                 <div className="category-bar" style={{ display: 'flex', gap: 12, justifyContent: 'center', margin: '24px 0' }}>
                     <button
                         className={`category-btn${selectedCategory === null ? ' selected' : ''}`}

@@ -16,3 +16,20 @@ html[dir="rtl"] body {
 }
 
 /* Add any other general theme styles below */
+.menu-title {
+  font-family: 'Heebo', 'M PLUS Rounded 1c', Arial, sans-serif;
+  font-size: 2.8em;
+  font-weight: 900;
+  color: #1a9da1;
+  letter-spacing: 2px;
+  text-shadow: 0 4px 18px rgba(26,157,161,0.10), 0 1.5px 6px rgba(0,0,0,0.08);
+  margin: 36px 0 18px 0;
+  background: linear-gradient(90deg, #1a9da1 0%, #0e5a5e 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  border-bottom: 4px solid #1a9da1;
+  display: block;
+  padding-bottom: 8px;
+  text-align: center;
+}
