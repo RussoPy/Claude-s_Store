@@ -49,7 +49,6 @@ header {
   justify-content: space-between;
   align-items: center;
   padding: 20px 40px;
-  background: #fff;
   border-bottom: 1px solid #eee;
 }
 
@@ -68,8 +67,6 @@ header nav a {
 .hero {
   text-align: center;
   padding: 100px 20px;
-  background-color: #f8f8f8;
-  /* Placeholder background */
   background-size: cover;
   background-position: center;
   color: #333;
@@ -99,7 +96,7 @@ header nav a {
 
 .product-card {
   background: #d8e3e7;
-  border: 1px solid #eee;
+  border: 1px solid #000;
   border-radius: 8px;
   padding: 0;
   text-align: center;
@@ -162,7 +159,6 @@ header nav a {
   grid-template-columns: 100px 1fr auto;
   gap: 20px;
   align-items: center;
-  background: #fff;
   padding: 20px;
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
@@ -219,7 +215,6 @@ header nav a {
 }
 
 .cart-summary-card {
-  background: #fff;
   padding: 25px;
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);

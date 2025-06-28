@@ -10,9 +10,10 @@ interface CustomerHomeProps {
     onProductAdd?: () => void;
     onProductRemove?: () => void;
     hiddenCategories: string[];
+    hiddenProducts: string[];
 }
 
-const CustomerHome: React.FC<CustomerHomeProps> = ({ onProductAdd, onProductRemove, hiddenCategories }) => {
+const CustomerHome: React.FC<CustomerHomeProps> = ({ onProductAdd, onProductRemove, hiddenCategories, hiddenProducts }) => {
     const productsRef = useRef<HTMLDivElement>(null);
     const [allProducts, setAllProducts] = useState<Product[]>([]);
     const [products, setProducts] = useState<Product[]>([]);
@@ -128,7 +129,7 @@ const CustomerHome: React.FC<CustomerHomeProps> = ({ onProductAdd, onProductRemo
                 </div>
             </div>
             <div className="product-list-container" ref={productsRef}>
-                <h1>התפריט שלנו</h1>
+                <h1 className="menu-title">התפריט שלנו</h1>
                 <div className="category-bar" style={{ display: 'flex', gap: 12, justifyContent: 'center', margin: '24px 0' }}>
                     <button
                         className={`category-btn${selectedCategory === null ? ' selected' : ''}`}
@@ -151,7 +152,7 @@ const CustomerHome: React.FC<CustomerHomeProps> = ({ onProductAdd, onProductRemo
                 {loading && <p>טוען מוצרים...</p>}
                 {error && <p style={{ color: 'red' }}>{error}</p>}
                 <div className="product-list">
-                    {products.filter(p => !hiddenCategories.includes(p.categoryId)).map(product => (
+                    {products.filter(p => !hiddenCategories.includes(p.categoryId) && !hiddenProducts.includes(p.id)).map(product => (
                         <ProductCard key={product.id} product={product} onProductAdd={onProductAdd} onProductRemove={onProductRemove} />
                     ))}
                 </div>
