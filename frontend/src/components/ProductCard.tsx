@@ -31,7 +31,9 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onProductAdd, onProd
 
     return (
         <div className="product-card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <img src={product.image || ''} alt={product.name} style={{ display: 'block', margin: '0 auto', maxWidth: '100%', maxHeight: 180, objectFit: 'contain' }} />
+            <div style={{ width: '100%', aspectRatio: '3/2', background: 'transparent', borderRadius: '18px', overflow: 'hidden', marginTop: 15, marginBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <img src={product.image || ''} alt={product.name} style={{ width: '90%', height: '90%', objectFit: 'cover', borderRadius: '18px', background: 'transparent' }} />
+            </div>
             <h3>{product.name}</h3>
             <p>₪{product.price.toFixed(2)}</p>
             {!isAdmin && (
