@@ -16,7 +16,7 @@ const HomePage: React.FC<HomePageProps> = ({ onProductAdd, onProductRemove, isAd
 
     if (authLoading) {
         return <div>Loading...</div>;
-    }
+        }
 
     return (
         <div>
@@ -35,7 +35,7 @@ const HomePage: React.FC<HomePageProps> = ({ onProductAdd, onProductRemove, isAd
                     hiddenProducts={hiddenProducts}
                 />
             )}
-        </div>
+            </div>
     );
 };
 
