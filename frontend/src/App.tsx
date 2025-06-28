@@ -1,13 +1,17 @@
-import React, { useState, useContext } from 'react';
-import { BrowserRouter as Router, Route, Routes, Link, useLocation } from 'react-router-dom';
+import React, { useState, useContext, useEffect } from 'react';
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import HomePage from './pages/HomePage';
 import CartPage from './pages/CartPage';
 import CheckoutPage from './pages/CheckoutPage';
-import { CartProvider, CartContext } from './context/CartContext';
+import AdminLoginPage from './pages/AdminLoginPage';
+import { CartProvider } from './context/CartContext';
 import FloatingCartButton from './components/FloatingCartButton';
 import './App.css';
+import { auth, db } from './firebase';
+import { onAuthStateChanged, User } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
 
 const ProductAddedIndicator = ({ show, type }: { show: boolean, type: 'add' | 'remove' }) => (
   show ? (
@@ -31,6 +35,23 @@ const ProductAddedIndicator = ({ show, type }: { show: boolean, type: 'add' | 'r
 function App() {
   const [showIndicator, setShowIndicator] = useState(false);
   const [indicatorType, setIndicatorType] = useState<'add' | 'remove'>('add');
+  const [isAdmin, setIsAdmin] = useState<boolean>(false);
+  const [authLoading, setAuthLoading] = useState(true);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        const adminDocRef = doc(db, 'admins', user.uid);
+        const adminDoc = await getDoc(adminDocRef);
+        setIsAdmin(adminDoc.exists());
+      } else {
+        setIsAdmin(false);
+      }
+      setAuthLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   // Provide a function to trigger the indicator
   const triggerIndicator = (type: 'add' | 'remove') => {
@@ -46,13 +67,14 @@ function App() {
         <Header />
         <main>
           <Routes>
-            <Route path="/" element={<HomePage onProductAdd={() => triggerIndicator('add')} onProductRemove={() => triggerIndicator('remove')} />} />
+            <Route path="/" element={<HomePage onProductAdd={() => triggerIndicator('add')} onProductRemove={() => triggerIndicator('remove')} isAdmin={isAdmin} authLoading={authLoading} />} />
             <Route path="/cart" element={<CartPage />} />
             <Route path="/checkout" element={<CheckoutPage />} />
+            <Route path="/admin/login" element={<AdminLoginPage />} />
           </Routes>
         </main>
         <Footer />
-        <FloatingCartButton />
+        {!isAdmin && <FloatingCartButton />}
       </Router>
     </CartProvider>
   );

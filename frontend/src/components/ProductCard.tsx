@@ -6,9 +6,10 @@ interface ProductCardProps {
     product: Product;
     onProductAdd?: () => void;
     onProductRemove?: () => void;
+    isAdmin?: boolean;
 }
 
-const ProductCard: React.FC<ProductCardProps> = ({ product, onProductAdd, onProductRemove }) => {
+const ProductCard: React.FC<ProductCardProps> = ({ product, onProductAdd, onProductRemove, isAdmin = false }) => {
     const cartContext = useContext(CartContext);
 
     if (!cartContext) {
@@ -33,14 +34,16 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onProductAdd, onProd
             <img src={product.image || ''} alt={product.name} style={{ display: 'block', margin: '0 auto', maxWidth: '100%', maxHeight: 180, objectFit: 'contain' }} />
             <h3>{product.name}</h3>
             <p>₪{product.price.toFixed(2)}</p>
-            {itemInCart ? (
-                <div className="quantity-control" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <button className="quantity-btn" style={{ fontSize: '0.9em', width: 28, height: 28, minWidth: 0, padding: 0 }} onClick={handleRemoveFromCart}>-</button>
-                    <span style={{ minWidth: 24, textAlign: 'center', display: 'inline-block' }}>{itemInCart.quantity}</span>
-                    <button className="quantity-btn" style={{ fontSize: '0.9em', width: 28, height: 28, minWidth: 0, padding: 0 }} onClick={() => { addToCart(product); if (onProductAdd) onProductAdd(); }}>+</button>
-                </div>
-            ) : (
-                <button onClick={handleAddToCart}>הוסף לעגלה</button>
+            {!isAdmin && (
+                itemInCart ? (
+                    <div className="quantity-control" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <button className="quantity-btn" style={{ fontSize: '0.9em', width: 28, height: 28, minWidth: 0, padding: 0 }} onClick={handleRemoveFromCart}>-</button>
+                        <span style={{ minWidth: 24, textAlign: 'center', display: 'inline-block' }}>{itemInCart.quantity}</span>
+                        <button className="quantity-btn" style={{ fontSize: '0.9em', width: 28, height: 28, minWidth: 0, padding: 0 }} onClick={() => { addToCart(product); if (onProductAdd) onProductAdd(); }}>+</button>
+                    </div>
+                ) : (
+                    <button onClick={handleAddToCart}>הוסף לעגלה</button>
+                )
             )}
         </div>
     );
