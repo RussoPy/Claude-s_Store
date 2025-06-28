@@ -4,6 +4,7 @@ import { Product } from '../types/Product';
 import { Category } from '../types/Category';
 import { db } from '../firebase';
 import { collection, getDocs, QueryDocumentSnapshot, DocumentData } from 'firebase/firestore';
+import 'bootstrap/dist/css/bootstrap.min.css';
 
 interface HomePageProps {
     onProductAdd?: () => void;
@@ -19,6 +20,10 @@ const HomePage: React.FC<HomePageProps> = ({ onProductAdd, onProductRemove }) =>
     const [categories, setCategories] = useState<Category[]>([]);
     const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
     const [catLoading, setCatLoading] = useState(true);
+    const heroImages = [
+        '/front-pic1.jpg', // Corrected to .jpg
+        '/front-pic2.jpg'  // Corrected to .jpg
+    ];
 
     useEffect(() => {
         setLoading(true);
@@ -31,7 +36,6 @@ const HomePage: React.FC<HomePageProps> = ({ onProductAdd, onProductRemove }) =>
             const productsData: Product[] = productsSnap.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => {
                 const data = doc.data();
                 let categoryId = '';
-                // Handle Firestore DocumentReference or string
                 if (data.categoryRef && typeof data.categoryRef === 'object' && 'id' in data.categoryRef) {
                     categoryId = data.categoryRef.id;
                 } else if (typeof data.categoryRef === 'string') {
@@ -77,10 +81,50 @@ const HomePage: React.FC<HomePageProps> = ({ onProductAdd, onProductRemove }) =>
 
     return (
         <>
-            <div className="hero">
-                <h1>מסורת ישנה, מרכיבים טריים.</h1>
-                <p>מקאפקייקס ועד חטיפי ילדים, יש לנו הכל בשבילכם.</p>
-                <button onClick={handleScrollToProducts}>קנה ללא צבעי מאכל</button>
+            <div className="hero" style={{ position: 'relative', minHeight: 340, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', background: 'linear-gradient(90deg, #e0f7fa 0%, #b2ebf2 100%)' }}>
+                <div id="heroCarousel" className="carousel slide" data-bs-ride="carousel" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: 430, zIndex: 1 }}>
+                    <div className="carousel-indicators">
+                        {heroImages.map((_, idx) => (
+                            <button
+                                key={idx}
+                                type="button"
+                                data-bs-target="#heroCarousel"
+                                data-bs-slide-to={idx}
+                                className={idx === 0 ? 'active' : ''}
+                                aria-current={idx === 0 ? 'true' : undefined}
+                                aria-label={`Slide ${idx + 1}`}
+                            ></button>
+                        ))}
+                    </div>
+                    <div className="carousel-inner" style={{ width: '100%', height: '100%' }}>
+                        {heroImages.map((img, idx) => (
+                            <div className={`carousel-item${idx === 0 ? ' active' : ''}`} key={img} style={{ width: '100%', height: '100%' }}>
+                                <img src={img} className="d-block w-100" alt={`hero-${idx}`} style={{ height: 450, objectFit: 'cover', opacity: 0.85 }} />
+                            </div>
+                        ))}
+                    </div>
+                    <button className="carousel-control-prev" type="button" data-bs-target="#heroCarousel" data-bs-slide="prev">
+                        <span className="carousel-control-prev-icon" aria-hidden="true"></span>
+                        <span className="visually-hidden">Previous</span>
+                    </button>
+                    <button className="carousel-control-next" type="button" data-bs-target="#heroCarousel" data-bs-slide="next">
+                        <span className="carousel-control-next-icon" aria-hidden="true"></span>
+                        <span className="visually-hidden">Next</span>
+                    </button>
+                </div>
+                <div style={{
+                    position: 'relative',
+                    zIndex: 2,
+                    color: '#333',
+                    textAlign: 'center',
+                    backgroundColor: 'rgba(255, 255, 255, 0.7)', // Semi-transparent white
+                    padding: '20px 40px', // Vertical and horizontal padding
+                    borderRadius: '50px', // Creates the "pill" shape
+                    maxWidth: '80%' // Prevents the pill from being too wide on large screens
+                }}>
+                    <h1>מסורת ישנה, מרכיבים טריים.</h1>
+                    <button onClick={handleScrollToProducts}>התפריט שלנו</button>
+                </div>
             </div>
             <div className="product-list-container" ref={productsRef}>
                 <h1>התפריט שלנו</h1>
