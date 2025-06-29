@@ -143,13 +143,13 @@ if DEBUG:
     CORS_ALLOWED_ORIGINS = [local_client_url]
 else:
     # In production, we only allow our live frontend domain.
-    prod_client_url = os.getenv('PRODUCTIONCLIENT')
-    if not prod_client_url:
-        # This is a critical check to ensure the production site is configured correctly.
+    prod_client_url = os.getenv('PRODUCTIONCLIENT', 'http://dummy-production-client.com')
+
+    # Fail only if we're in production and it's still the dummy value
+    if not prod_client_url or prod_client_url == 'http://dummy-production-client.com':
         raise ValueError("The 'PRODUCTIONCLIENT' environment variable must be set in your .env file for production.")
+
     CORS_ALLOWED_ORIGINS = [prod_client_url]
-    # You might also want to set ALLOWED_HOSTS for production here
-    # e.g., ALLOWED_HOSTS = ['your-backend-api.onrender.com']
 
 
 REST_FRAMEWORK = {
