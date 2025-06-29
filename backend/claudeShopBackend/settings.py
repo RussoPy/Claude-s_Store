@@ -169,4 +169,6 @@ SENDGRID_ECHO_TO_STDOUT = True # Print email content to console in DEBUG mode
 
 # The email address that emails will be sent from. Must be a verified sender in SendGrid.
 DEFAULT_FROM_EMAIL = os.getenv('SENDGRID_FROM_EMAIL', 'noreply@yourclaudeShop.com')
+
+# The email address for the admin to receive order notifications.
 ADMIN_EMAIL = os.getenv('ADMIN_EMAIL', 'admin@example.com')
