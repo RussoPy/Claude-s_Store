@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { db } from '../firebase';
 import { collection, query, where, getDocs, Timestamp } from 'firebase/firestore';
 import { Coupon } from '../types/Coupon';
+import ThankYouPage from './ThankYouPage';
 
 // Custom component to handle the loading state of the PayPal script
 const PayPalCheckoutButton = ({ createOrder, onApprove, onError }: any) => {
@@ -117,9 +118,19 @@ const CheckoutPage = () => {
 
         if (response.ok) {
           const displayId = orderData.paypal_capture_id || details.id;
-          alert(`תודה על ההזמנה!\n\nההזמנה התקבלה בהצלחה.\n\nמספר עסקה לאישור:\n${displayId}`);
-          cartContext.clearCart();
-          navigate('/');
+          navigate('/thankyou', {
+            state: {
+              order: {
+                transactionId: displayId,
+                finalTotal: finalTotal.toFixed(2),
+                cartItems: cartItems,
+                couponCode: couponCode || null
+              }
+            }
+          });
+          setTimeout(() => {
+            cartContext.clearCart();
+          }, 500);
         } else {
           throw new Error(orderData.message || 'שגיאה בשמירת ההזמנה');
         }

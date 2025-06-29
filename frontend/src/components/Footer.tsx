@@ -7,6 +7,7 @@ const Footer = () => {
             <div className="footer-content">
                 <div className="footer-section">
                     <h3>המעדניה של קלוד בע"מ</h3>
+                    <p style={{ margin: 0, color: '#fff', fontWeight: 600 }}>זמן הכנת משלוח: 3-4 ימים</p>
                     <p> מסורת של איכות, טריות ושירות מכל הלב.</p>
                 </div>
                 <div className="footer-section">
