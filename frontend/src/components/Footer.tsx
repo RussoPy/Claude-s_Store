@@ -33,7 +33,7 @@ const Footer = () => {
                 </div>
             </div>
             <div className="footer-bottom">
-                <p>© {new Date().getFullYear()} המעדיה של קלוד בע"מ — כל הזכויות שמורות.</p>
+                <p>© {new Date().getFullYear()} המעדיה של קלוד — כל הזכויות שמורות.</p>
             </div>
         </footer>
     );

@@ -28,7 +28,7 @@ class OrderSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Order
-        fields = ['id', 'customer_name', 'customer_email', 'customer_phone', 'created_at', 'is_paid', 'items']
+        fields = ['id', 'customer_name', 'customer_email', 'customer_phone', 'created_at', 'is_paid', 'shipping_method', 'items']
         read_only_fields = ['created_at']
 
     def create(self, validated_data):

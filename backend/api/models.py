@@ -16,11 +16,17 @@ class Product(models.Model):
         return self.name
 
 class Order(models.Model):
+    SHIPPING_CHOICES = [
+        ('pickup', 'Pickup'),
+        ('delivery', 'Delivery'),
+    ]
+
     customer_name = models.CharField(max_length=255)
     customer_email = models.EmailField()
     customer_phone = models.CharField(max_length=20)
     created_at = models.DateTimeField(auto_now_add=True)
     is_paid = models.BooleanField(default=False)
+    shipping_method = models.CharField(max_length=10, choices=SHIPPING_CHOICES, default='pickup')
     
     def __str__(self):
         return f"Order {self.id} by {self.customer_name}"

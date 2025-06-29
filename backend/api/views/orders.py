@@ -163,6 +163,10 @@ def send_order_emails(order_data):
     if not shipping_address_text:
         shipping_address_text = 'לא צוינה'
 
+    # --- NEW: Get Shipping Method ---
+    shipping_method = order_data.get('shipping_method', 'pickup') # Default to pickup if not provided
+    shipping_method_hebrew = "איסוף עצמי" if shipping_method == 'pickup' else "משלוח"
+
     # --- Email to Customer ---
     subject_customer = f"אישור הזמנה מ-claudeShop! מספר הזמנה: {order_id_for_email}"
     
@@ -175,6 +179,8 @@ def send_order_emails(order_data):
     {items_list_text}
     {discount_text}
     סך הכל לתשלום: ₪{total_price:.2f}
+
+    אופן קבלת ההזמנה: {shipping_method_hebrew}
 
     מספר ההזמנה שלך למעקב הוא: {order_id_for_email}
 
@@ -192,6 +198,7 @@ def send_order_emails(order_data):
         </ul>
         {discount_html}
         <p style="font-size: 1.1em;"><strong>סך הכל לתשלום: ₪{total_price:.2f}</strong></p>
+        <p><strong>אופן קבלת ההזמנה:</strong> {shipping_method_hebrew}</p>
         <p><strong>מספר ההזמנה שלך למעקב הוא:</strong> {order_id_for_email}</p>
         <hr>
         <p>תודה שבחרת בנו,</p>
@@ -217,7 +224,9 @@ def send_order_emails(order_data):
 
     פרטי ההזמנה:
     מספר הזמנה: {order_id_for_email}
-    שעת תשלום: {payment_time_formatted}
+    תאריך תשלום: {payment_time_formatted}
+
+    אופן קבלת ההזמנה: {shipping_method_hebrew}
 
     פרטי הלקוח:
     שם: {customer_name}
@@ -236,13 +245,16 @@ def send_order_emails(order_data):
         <h2>התקבלה הזמנה חדשה!</h2>
         
         <h3>פרטי ההזמנה</h3>
-        <ul style="list-style-type: none; padding: 0; margin-right: 0; padding-right: 0;">
+        <ul style="list-style-type: none; padding: 0;">
             <li><strong>מספר הזמנה:</strong> {order_id_for_email}</li>
-            <li><strong>שעת תשלום:</strong> {payment_time_formatted}</li>
+            <li><strong>תאריך תשלום:</strong> {payment_time_formatted}</li>
         </ul>
+        <p style="background-color: #ffc107; padding: 5px; border-radius: 5px; display: inline-block;">
+            <strong>אופן קבלת ההזמנה: {shipping_method_hebrew}</strong>
+        </p>
 
         <h3>פרטי הלקוח</h3>
-        <ul style="list-style-type: none; padding: 0; margin-right: 0; padding-right: 0;">
+        <ul style="list-style-type: none; padding: 0;">
             <li><strong>שם:</strong> {customer_name}</li>
             <li><strong>אימייל:</strong> {payer_email}</li>
             <li><strong>טלפון ליצירת קשר:</strong> {payer_phone}</li>
@@ -250,7 +262,7 @@ def send_order_emails(order_data):
         </ul>
 
         <h3>פירוט המוצרים:</h3>
-        <ul style="list-style-type: none; padding: 0; margin-right: 0; padding-right: 0;">
+        <ul style="list-style-type: none; padding: 0;">
             {items_list_html}
         </ul>
         {discount_html}
@@ -271,19 +283,18 @@ def send_order_emails(order_data):
 @permission_classes([AllowAny])
 def create_order(request):
     """
-    Handles the creation of an order after a successful PayPal payment.
-    - Receives PayPal details and cart items from the frontend.
-    - Verifies the payment with PayPal's API.
-    - Calculates the total from cart items and validates against the PayPal amount.
-    - Saves the order to Firestore.
-    - Sends confirmation emails.
+    Main endpoint to create an order.
+    Receives PayPal details and cart from the frontend, verifies payment with PayPal,
+    saves the order to Firestore, and sends confirmation emails.
     """
     try:
-        db = initialize_firebase()
         data = json.loads(request.body)
         paypal_details = data.get('paypalDetails', {})
         cart_items = data.get('cartItems', [])
         coupon_code = data.get('couponCode', None)
+        shipping_method = data.get('shippingMethod', 'pickup')
+
+        db = initialize_firebase()
         
         paypal_order_id = paypal_details.get('id')
 
@@ -324,6 +335,9 @@ def create_order(request):
             else:
                 print(f"Coupon '{coupon_code}' not found or is not active.")
 
+        # NEW: Add shipping cost to server total
+        if shipping_method == 'delivery' and server_total > 0 and server_total < 100:
+            server_total += 20 # Add the standard shipping fee
 
         # 3. Validate server total against PayPal total
         paypal_amount = float(verified_paypal_order["purchase_units"][0]["amount"]["value"])
@@ -349,7 +363,8 @@ def create_order(request):
             "payment_time": verified_paypal_order.get("create_time"), # or update_time
             "created_at": firestore.SERVER_TIMESTAMP,
             "coupon_used": coupon_code if discount_percentage > 0 else None,
-            "discount_percentage": discount_percentage
+            "discount_percentage": discount_percentage,
+            "shipping_method": shipping_method
         }
 
         db.collection('orders').add(order_data)

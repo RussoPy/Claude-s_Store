@@ -8,7 +8,7 @@ import { Coupon } from '../types/Coupon';
 import ThankYouPage from './ThankYouPage';
 
 // Custom component to handle the loading state of the PayPal script
-const PayPalCheckoutButton = ({ createOrder, onApprove, onError }: any) => {
+const PayPalCheckoutButton = ({ createOrder, onApprove, onError, onCancel }: any) => {
   const [{ isPending }, dispatch] = usePayPalScriptReducer();
 
   useEffect(() => {
@@ -23,6 +23,7 @@ const PayPalCheckoutButton = ({ createOrder, onApprove, onError }: any) => {
         createOrder={createOrder}
         onApprove={onApprove}
         onError={onError}
+        onCancel={onCancel}
         disabled={isPending}
       />
     </>
@@ -36,13 +37,28 @@ const CheckoutPage = () => {
   const [finalTotal, setFinalTotal] = useState(0);
   const [discountAmount, setDiscountAmount] = useState(0);
   const [couponMessage, setCouponMessage] = useState('');
+  const [shippingMethod, setShippingMethod] = useState('pickup'); // 'pickup' or 'delivery'
+  const [shippingCost, setShippingCost] = useState(0);
   const { getCartTotal, clearCart, cartItems } = cartContext || {};
 
+  const SHIPPING_FEE = 20;
+  const FREE_SHIPPING_THRESHOLD = 100;
+
   useEffect(() => {
-    if (getCartTotal) {
-      setFinalTotal(getCartTotal());
+    if (!getCartTotal) return;
+
+    const cartTotal = getCartTotal();
+    const totalAfterDiscount = cartTotal - discountAmount;
+
+    let currentShippingCost = 0;
+    // Add shipping fee if delivery is selected and total is under the threshold
+    if (shippingMethod === 'delivery' && totalAfterDiscount > 0 && totalAfterDiscount < FREE_SHIPPING_THRESHOLD) {
+      currentShippingCost = SHIPPING_FEE;
     }
-  }, [cartItems, getCartTotal]);
+    setShippingCost(currentShippingCost);
+
+    setFinalTotal(totalAfterDiscount + currentShippingCost);
+  }, [cartItems, getCartTotal, discountAmount, shippingMethod]);
 
   if (!cartContext) {
     return <div>טוען...</div>;
@@ -60,7 +76,7 @@ const CheckoutPage = () => {
       const querySnapshot = await getDocs(q);
       if (querySnapshot.empty) {
         setCouponMessage('קופון לא חוקי');
-        setFinalTotal(getCartTotal!());
+        setDiscountAmount(0);
         return;
       }
 
@@ -68,23 +84,29 @@ const CheckoutPage = () => {
 
       if (coupon.expiresAt.toDate() < new Date()) {
         setCouponMessage('הקופון פג תוקף');
-        setFinalTotal(getCartTotal!());
+        setDiscountAmount(0);
         return;
       }
 
       const total = getCartTotal!();
       const discount = (total * coupon.percentageOff) / 100;
       setDiscountAmount(discount);
-      setFinalTotal(total - discount);
       setCouponMessage(`הנחה של ${coupon.percentageOff}% הופעלה!`);
 
     } catch (error) {
       setCouponMessage('שגיאה באימות הקופון');
-      setFinalTotal(getCartTotal!());
+      setDiscountAmount(0);
     }
   };
 
   const createOrder = (data: any, actions: any) => {
+    // Guard against invalid or zero totals
+    if (typeof finalTotal !== 'number' || finalTotal <= 0) {
+      console.error("Invalid finalTotal passed to PayPal:", finalTotal);
+      alert("סכום ההזמנה אינו תקין. אנא רענן את העמוד או נסה שוב.");
+      return Promise.reject(new Error("Invalid total amount."));
+    }
+
     return actions.order.create({
       purchase_units: [
         {
@@ -110,7 +132,8 @@ const CheckoutPage = () => {
             paypalDetails: details,
             cartItems: cartItems,
             couponCode: couponCode,
-            finalTotal: finalTotal.toFixed(2)
+            finalTotal: finalTotal.toFixed(2),
+            shippingMethod: shippingMethod
           })
         });
 
@@ -147,8 +170,27 @@ const CheckoutPage = () => {
     alert('אירעה שגיאה במהלך התשלום.');
   }
 
+  const onCancel = (data: any) => {
+    // This function is called when the user closes the PayPal popup.
+    // We log it for debugging purposes but don't show an error to the user.
+    console.log("PayPal payment cancelled by user.", data);
+  };
+
+  const clientId = process.env.REACT_APP_PAYPAL_CLIENT_ID;
+
+  if (!clientId) {
+    return (
+      <div className="checkout-page" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '80vh' }}>
+        <div style={{ maxWidth: '500px', textAlign: 'center', padding: '20px', background: '#f8d7da', color: '#721c24', borderRadius: '8px' }}>
+          <h2>שגיאת תצורה</h2>
+          <p>שירות התשלומים אינו מוגדר כראוי. אנא פנה לתמיכת האתר.</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <PayPalScriptProvider options={{ clientId: process.env.REACT_APP_PAYPAL_CLIENT_ID || "test", currency: "ILS" }}>
+    <PayPalScriptProvider options={{ clientId: clientId, currency: "ILS" }}>
       <div className="checkout-page" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minHeight: '80vh' }}>
         <div style={{ width: '100%', maxWidth: '500px', textAlign: 'center' }}>
           <h1>תשלום</h1>
@@ -171,6 +213,28 @@ const CheckoutPage = () => {
                 <span>-₪{discountAmount.toFixed(2)}</span>
               </div>
             )}
+            <div className="shipping-options" style={{ marginTop: '20px', textAlign: 'right' }}>
+              <h5 style={{ marginBottom: '10px' }}>אפשרויות משלוח</h5>
+              <div className="form-check">
+                <input className="form-check-input" style={{ float: 'right', marginLeft: '10px' }} type="radio" name="shippingOptions" id="pickup" value="pickup" checked={shippingMethod === 'pickup'} onChange={(e) => setShippingMethod(e.target.value)} />
+                <label className="form-check-label" htmlFor="pickup">
+                  איסוף עצמי (חינם)
+                </label>
+              </div>
+              <div className="form-check">
+                <input className="form-check-input" style={{ float: 'right', marginLeft: '10px' }} type="radio" name="shippingOptions" id="delivery" value="delivery" checked={shippingMethod === 'delivery'} onChange={(e) => setShippingMethod(e.target.value)} />
+                <label className="form-check-label" htmlFor="delivery">
+                  משלוח עד הבית
+                </label>
+              </div>
+              <p style={{ fontSize: '0.9em', color: '#6c757d', marginTop: '5px' }}>משלוח חינם בהזמנה מעל ₪100. זמן אספקה: 3-4 ימי עסקים.</p>
+            </div>
+            {shippingMethod === 'delivery' && (
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span>דמי משלוח:</span>
+                <span>₪{shippingCost.toFixed(2)}</span>
+              </div>
+            )}
             <hr />
             <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '1.2em' }}>
               <span>סה"כ לתשלום:</span>
@@ -182,6 +246,7 @@ const CheckoutPage = () => {
               createOrder={createOrder}
               onApprove={onApprove}
               onError={onError}
+              onCancel={onCancel}
             />
           </div>
         </div>

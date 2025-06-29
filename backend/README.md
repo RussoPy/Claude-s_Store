@@ -56,3 +56,60 @@ When deploying to Render:
 1. Add all these environment variables in Render's dashboard
 2. Make sure to use the production/live credentials
 3. Double-check the sender email is verified in SendGrid
+
+# Backend Instructions for the Business Owner
+
+This document provides instructions on how to manage the essential credentials for your online store. These credentials should be kept secret and secure.
+
+## Understanding Environment Variables
+
+Your store's backend uses a special file named `.env` to hold sensitive information like API keys. This file is located in the root of the `backend` directory. It is intentionally kept separate from the main codebase to protect your credentials.
+
+**IMPORTANT:** Never share the contents of your `.env` file or commit it to a public repository.
+
+## Updating Your Credentials
+
+To update the store's credentials, you will need to edit the `backend/.env` file. It will look something like this:
+
+```
+# Email settings for SendGrid
+SENDGRID_API_KEY="YOUR_SENDGRID_API_KEY_HERE"
+SENDGRID_FROM_EMAIL="your-verified-email@yourdomain.com"
+ADMIN_EMAIL="email-to-receive-orders@yourdomain.com"
+
+# Payment settings for PayPal
+PAYPAL_CLIENT_ID="YOUR_PAYPAL_CLIENT_ID_HERE"
+```
+
+Follow the steps below to get the correct values for each setting.
+
+### 1. How to Get Your SendGrid API Key
+
+SendGrid is used to send transactional emails (like order confirmations) to your customers.
+
+1.  **Log in** to your [SendGrid account](https://app.sendgrid.com/).
+2.  Navigate to **Settings** > **API Keys**.
+3.  Click **Create API Key**.
+4.  Give the key a name (e.g., "ClaudeShop Key").
+5.  Choose **Full Access** for the permissions.
+6.  Click **Create & View**.
+7.  **Copy the generated API key immediately.** SendGrid will only show you this key once.
+8.  In your `.env` file, replace `"YOUR_SENDGRID_API_KEY_HERE"` with the key you just copied.
+
+You will also need to set up a **Verified Sender Identity** in SendGrid for the `SENDGRID_FROM_EMAIL`. This ensures your emails don't go to spam.
+
+### 2. How to Get Your PayPal Client ID
+
+PayPal is used to process payments from your customers.
+
+1.  **Log in** to your [PayPal Developer Dashboard](https://developer.paypal.com/dashboard/).
+2.  Go to the **My Apps & Credentials** section.
+3.  Ensure you are in the **Live** tab (not Sandbox).
+4.  If you don't have an app yet, click **Create App**.
+5.  Once you have an app, you will see its details.
+6.  Find the **Client ID** on this page and copy it.
+7.  In your `.env` file, replace `"YOUR_PAYPAL_CLIENT_ID_HERE"` with the Client ID you just copied.
+
+### 3. Final Step: Restart the Server
+
+After you have updated your `.env` file, you must **restart your backend server**. The server only reads the `.env` file when it starts up, so a restart is required for the changes to take effect.
