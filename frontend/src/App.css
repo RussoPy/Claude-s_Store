@@ -267,9 +267,357 @@ header nav a {
 
 /* Footer */
 footer {
-  background: #f8f8f8;
-  color: #666;
   text-align: center;
-  padding: 40px 20px;
-  margin-top: 60px;
+  padding: 40px;
+  margin-top: 40px;
+  background-color: #f8f9fa;
+  border-top: 1px solid #eee;
+}
+
+/* Category Bar */
+.category-bar {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin: 24px 0;
+  flex-wrap: wrap;
+  /* Allow buttons to wrap on smaller screens */
+}
+
+.category-btn {
+  background: #fff;
+  color: #1a9da1;
+  border: 2px solid #1a9da1;
+  border-radius: 20px;
+  padding: 8px 24px;
+  font-weight: 700;
+  font-size: 18px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.category-btn.selected {
+  background: #1a9da1;
+  color: #fff;
+}
+
+/* --- Responsive Design --- */
+
+/* Medium devices (tablets, less than 992px) */
+@media (max-width: 991.98px) {
+  .product-list {
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 20px;
+  }
+
+  main {
+    padding: 0 20px;
+  }
+}
+
+/* Small devices (landscape phones, less than 768px) */
+@media (max-width: 767.98px) {
+  .hero h1 {
+    font-size: 36px;
+  }
+
+  .product-list {
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  }
+
+  .category-bar {
+    gap: 8px;
+  }
+
+  .category-btn {
+    font-size: 14px;
+    padding: 6px 16px;
+  }
+
+  .cart-container {
+    grid-template-columns: 1fr;
+  }
+
+  header {
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .checkout-page {
+    padding: 20px;
+  }
+
+  .cart-item-card {
+    grid-template-columns: 80px 1fr auto;
+  }
+
+  .cart-page h1 {
+    font-size: 28px;
+  }
+}
+
+/* Extra small devices (portrait phones, less than 576px) */
+@media (max-width: 575.98px) {
+  .product-list {
+    grid-template-columns: 1fr;
+    /* Single column on very small screens */
+  }
+
+  .hero h1 {
+    font-size: 28px;
+  }
+
+  header {
+    flex-direction: column;
+    gap: 15px;
+  }
+}
+
+/* --- Cart Page Specific Styles --- */
+.cart-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  font-family: 'Heebo', sans-serif;
+}
+
+.cart-page h1 {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.cart-empty-container {
+  text-align: center;
+  padding: 60px 20px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.cart-empty-container p {
+  font-size: 1.2em;
+  margin-bottom: 30px;
+}
+
+.cart-empty-container .back-to-shop-btn {
+  padding: 15px 30px;
+  font-size: 1.1em;
+  cursor: pointer;
+  background-color: #1a9da1;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  font-weight: 600;
+}
+
+.cart-container {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 30px;
+  align-items: start;
+}
+
+.cart-items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.cart-item-card {
+  display: grid;
+  grid-template-columns: 100px 1fr auto;
+  gap: 20px;
+  align-items: center;
+  background: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.cart-item-image {
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 6px;
+}
+
+.cart-item-info h3 {
+  margin: 0 0 10px;
+  font-size: 18px;
+}
+
+.cart-item-info p {
+  margin: 5px 0;
+  color: #666;
+}
+
+.item-total-price {
+  font-weight: bold;
+  font-size: 1.1em;
+  margin: 10px 0 0;
+}
+
+.quantity-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 10px 0;
+}
+
+.quantity-controls button {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  font-size: 1.2em;
+  line-height: 1;
+  cursor: pointer;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  background-color: #f0f0f0;
+  color: #333;
+}
+
+.quantity-controls span {
+  min-width: 24px;
+  text-align: center;
+}
+
+.remove-item-btn {
+  background: none;
+  border: none;
+  color: #f44336;
+  font-weight: bold;
+  cursor: pointer;
+  padding: 8px;
+  font-size: 1em;
+  align-self: flex-start;
+}
+
+.cart-summary-card {
+  background: #fff;
+  padding: 25px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  position: sticky;
+  top: 40px;
+}
+
+.cart-summary-card h2 {
+  margin-top: 0;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 15px;
+  margin-bottom: 20px;
+}
+
+.summary-total {
+  display: flex;
+  justify-content: space-between;
+  font-size: 1.2em;
+  font-weight: bold;
+  margin-bottom: 25px;
+}
+
+.checkout-btn {
+  width: 100%;
+  padding: 15px;
+  font-size: 1.1em;
+  cursor: pointer;
+  background-color: #1a9da1;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  font-weight: 600;
+}
+
+/* --- Responsive Design --- */
+
+/* Medium devices (tablets, less than 992px) */
+@media (max-width: 991.98px) {
+  .product-list {
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 20px;
+  }
+
+  main {
+    padding: 0 20px;
+  }
+}
+
+/* Small devices (landscape phones, less than 768px) */
+@media (max-width: 767.98px) {
+  .hero h1 {
+    font-size: 36px;
+  }
+
+  .product-list {
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  }
+
+  .category-bar {
+    gap: 8px;
+  }
+
+  .category-btn {
+    font-size: 14px;
+    padding: 6px 16px;
+  }
+
+  .cart-container {
+    grid-template-columns: 1fr;
+  }
+
+  header {
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .checkout-page {
+    padding: 20px;
+  }
+
+  .cart-item-card {
+    grid-template-columns: 80px 1fr auto;
+    /* Adjust for smaller images */
+    gap: 15px;
+    padding: 15px;
+  }
+
+  .cart-item-image {
+    width: 80px;
+    height: 80px;
+  }
+
+  .cart-item-info h3 {
+    font-size: 16px;
+  }
+
+  .cart-page h1 {
+    font-size: 28px;
+  }
+
+  .cart-page {
+    padding-bottom: 40px;
+    /* Add some space at the bottom */
+  }
+
+  .cart-summary-card {
+    position: static;
+  }
+}
+
+/* Extra small devices (portrait phones, less than 576px) */
+@media (max-width: 575.98px) {
+  .product-list {
+    grid-template-columns: 1fr;
+    /* Single column on very small screens */
+  }
+
+  .hero h1 {
+    font-size: 28px;
+  }
+
+  header {
+    flex-direction: column;
+    gap: 15px;
+  }
 }

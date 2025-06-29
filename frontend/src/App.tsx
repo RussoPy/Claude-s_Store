@@ -13,6 +13,7 @@ import './App.css';
 import { auth, db } from './firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
+import ScrollToTop from './components/ScrollToTop';
 
 const ProductAddedIndicator = ({ show, type }: { show: boolean, type: 'add' | 'remove' }) => (
   show ? (
@@ -64,6 +65,7 @@ function App() {
   return (
     <CartProvider>
       <Router>
+        <ScrollToTop />
         <ProductAddedIndicator show={showIndicator} type={indicatorType} />
         <Header />
         <main>

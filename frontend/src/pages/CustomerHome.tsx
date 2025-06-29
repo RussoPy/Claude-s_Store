@@ -151,10 +151,9 @@ const CustomerHome: React.FC<CustomerHomeProps> = ({ onProductAdd, onProductRemo
             </div>
             <div className="product-list-container" ref={productsRef}>
                 <h1 className="menu-title">התפריט שלנו</h1>
-                <div className="category-bar" style={{ display: 'flex', gap: 12, justifyContent: 'center', margin: '24px 0' }}>
+                <div className="category-bar">
                     <button
                         className={`category-btn${selectedCategory === null ? ' selected' : ''}`}
-                        style={{ background: selectedCategory === null ? '#1a9da1' : '#fff', color: selectedCategory === null ? '#fff' : '#1a9da1', border: '2px solid #1a9da1', borderRadius: 20, padding: '8px 24px', fontWeight: 700, fontSize: 18, cursor: 'pointer', transition: 'all 0.2s' }}
                         onClick={() => setSelectedCategory(null)}
                     >
                         הכל
@@ -163,7 +162,6 @@ const CustomerHome: React.FC<CustomerHomeProps> = ({ onProductAdd, onProductRemo
                         <button
                             key={cat.id}
                             className={`category-btn${selectedCategory === cat.id ? ' selected' : ''}`}
-                            style={{ background: selectedCategory === cat.id ? '#1a9da1' : '#fff', color: selectedCategory === cat.id ? '#fff' : '#1a9da1', border: '2px solid #1a9da1', borderRadius: 20, padding: '8px 24px', fontWeight: 700, fontSize: 18, cursor: 'pointer', transition: 'all 0.2s' }}
                             onClick={() => setSelectedCategory(cat.id)}
                         >
                             {cat.name}
