@@ -52,7 +52,9 @@ def initialize_firebase():
 
 # --- PayPal Verification Functions ---
 
-PAYPAL_API_BASE = "https://api-m.sandbox.paypal.com" if settings.DEBUG else "https://api-m.paypal.com"
+# Use an explicit environment variable for PayPal's mode
+PAYPAL_MODE = os.getenv('PAYPAL_MODE', 'sandbox') # Default to sandbox for safety
+PAYPAL_API_BASE = "https://api-m.sandbox.paypal.com" if PAYPAL_MODE == 'sandbox' else "https://api-m.paypal.com"
 
 def get_paypal_access_token():
     """Get access token from PayPal."""
