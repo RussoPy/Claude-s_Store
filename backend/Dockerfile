@@ -50,18 +50,8 @@ RUN chown -R appuser:appuser /app
 # Switch to non-root user
 USER appuser
 
-# Create directory for static files
-RUN mkdir -p staticfiles
-
-# Collect static files
-RUN python manage.py collectstatic --noinput
-
 # Expose port
 EXPOSE 8000
 
-# Add healthcheck
-HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8000/health/ || exit 1
-
 # Start gunicorn
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "4", "--threads", "4", "claudeShopBackend.wsgi:application"] 
+CMD ["sh", "-c", "gunicorn --bind 0.0.0.0:8000 --workers 2 --threads 2 claudeShopBackend.wsgi:application"] 

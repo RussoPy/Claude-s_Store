@@ -1,6 +1,5 @@
-asgiref==3.8.1
-Django==5.0.6
-djangorestframework
+django==5.0.1
+djangorestframework==3.14.0
 django-cors-headers
 firebase-admin
 python-dotenv==1.0.0
@@ -10,5 +9,4 @@ tzdata==2024.1
 gunicorn==21.2.0
 dj-database-url
 psycopg2-binary
-whitenoise==6.6.0
 django-sendgrid-v5
