@@ -25,9 +25,13 @@ SECRET_KEY = 'django-insecure-_l4s8ip1!ocsxg*z92bt)3#8#b9a4^g=(+jft=-=p7hi7a&#kc
 
 # The `DEBUG` flag is now controlled by an environment variable.
 # It defaults to `False` (safe for production) unless `DEBUG=True` is in the .env file.
-DEBUG = os.getenv('DEBUG', 'False') == 'True'
+DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    'localhost',
+    '127.0.0.1',
+    'claude-s-store.onrender.com',
+]
 
 
 # Application definition
@@ -144,6 +148,7 @@ else:
 
     CORS_ALLOWED_ORIGINS = [prod_client_url]
 
+CORS_ALLOW_CREDENTIALS = True
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
