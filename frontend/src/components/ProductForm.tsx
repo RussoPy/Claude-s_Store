@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import CustomModal from './CustomModal';
 import { Product } from '../types/Product';
 import { Category } from '../types/Category';
 import { db, storage } from '../firebase';
@@ -7,15 +6,13 @@ import { collection, doc, addDoc, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 interface ProductFormProps {
-    show: boolean;
-    onHide: () => void;
     onSave: () => void;
     product: Product | null;
     categories: Category[];
     allProducts: Product[]; // For validation
 }
 
-const ProductForm: React.FC<ProductFormProps> = ({ show, onHide, onSave, product, categories, allProducts }) => {
+const ProductForm: React.FC<ProductFormProps> = ({ onSave, product, categories, allProducts }) => {
     const [formData, setFormData] = useState<Partial<Product>>({
         name: '',
         description: '',
@@ -38,7 +35,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ show, onHide, onSave, product
         }
         setImageFile(null);
         setError(null);
-    }, [product, show]);
+    }, [product]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
@@ -89,7 +86,6 @@ const ProductForm: React.FC<ProductFormProps> = ({ show, onHide, onSave, product
                 await addDoc(collection(db, 'products'), dataToSave);
             }
             onSave();
-            onHide();
         } catch (error) {
             console.error("Error saving product: ", error);
             setError("Failed to save product.");
@@ -99,50 +95,48 @@ const ProductForm: React.FC<ProductFormProps> = ({ show, onHide, onSave, product
     };
 
     return (
-        <CustomModal show={show} onHide={onHide} title={product ? 'ערוך מוצר' : 'הוסף מוצר חדש'}>
-            <form onSubmit={handleSubmit}>
-                <div className="mb-3">
-                    <label className="form-label">שם המוצר</label>
-                    <input type="text" className="form-control" name="name" value={formData.name} onChange={handleChange} required />
-                </div>
-                <div className="mb-3">
-                    <label className="form-label">תיאור</label>
-                    <textarea className="form-control" rows={3} name="description" value={formData.description} onChange={handleChange} required />
-                </div>
-                <div className="row">
-                    <div className="col">
-                        <div className="mb-3">
-                            <label className="form-label">מחיר</label>
-                            <input type="number" className="form-control" name="price" value={formData.price} onChange={handleChange} required />
-                        </div>
-                    </div>
-                    <div className="col">
-                        <div className="mb-3">
-                            <label className="form-label">כמות</label>
-                            <input type="number" className="form-control" name="quantity" value={formData.quantity} onChange={handleChange} required />
-                        </div>
+        <form onSubmit={handleSubmit}>
+            <div className="mb-3">
+                <label className="form-label">שם המוצר</label>
+                <input type="text" className="form-control" name="name" value={formData.name} onChange={handleChange} required />
+            </div>
+            <div className="mb-3">
+                <label className="form-label">תיאור</label>
+                <textarea className="form-control" rows={3} name="description" value={formData.description} onChange={handleChange} required />
+            </div>
+            <div className="row">
+                <div className="col">
+                    <div className="mb-3">
+                        <label className="form-label">מחיר</label>
+                        <input type="number" className="form-control" name="price" value={formData.price} onChange={handleChange} required />
                     </div>
                 </div>
-                <div className="mb-3">
-                    <label className="form-label">תמונה</label>
-                    <input type="file" className="form-control" onChange={handleFileChange} accept="image/*" />
-                    {product?.image && !imageFile && <img src={product.image} alt="current" style={{ maxWidth: '100px', marginTop: '10px' }} />}
+                <div className="col">
+                    <div className="mb-3">
+                        <label className="form-label">כמות</label>
+                        <input type="number" className="form-control" name="quantity" value={formData.quantity} onChange={handleChange} required />
+                    </div>
                 </div>
-                <div className="mb-3">
-                    <label className="form-label">קטגוריה</label>
-                    <select className="form-select" name="categoryId" value={formData.categoryId} onChange={handleChange} required>
-                        <option value="">בחר קטגוריה</option>
-                        {categories.map(cat => (
-                            <option key={cat.id} value={cat.id}>{cat.name}</option>
-                        ))}
-                    </select>
-                </div>
-                {error && <p className="text-danger">{error}</p>}
-                <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
-                    {isSubmitting ? 'שומר...' : 'שמור שינויים'}
-                </button>
-            </form>
-        </CustomModal>
+            </div>
+            <div className="mb-3">
+                <label className="form-label">תמונה</label>
+                <input type="file" className="form-control" onChange={handleFileChange} accept="image/*" />
+                {product?.image && !imageFile && <img src={product.image} alt="current" style={{ maxWidth: '100px', marginTop: '10px' }} />}
+            </div>
+            <div className="mb-3">
+                <label className="form-label">קטגוריה</label>
+                <select className="form-select" name="categoryId" value={formData.categoryId} onChange={handleChange} required>
+                    <option value="">בחר קטגוריה</option>
+                    {categories.map(cat => (
+                        <option key={cat.id} value={cat.id}>{cat.name}</option>
+                    ))}
+                </select>
+            </div>
+            {error && <p className="text-danger">{error}</p>}
+            <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
+                {isSubmitting ? 'שומר...' : 'שמור שינויים'}
+            </button>
+        </form>
     );
 };
 

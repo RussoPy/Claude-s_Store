@@ -52,6 +52,8 @@ const CustomerHome: React.FC<CustomerHomeProps> = ({ onProductAdd, onProductRemo
                             categoryId,
                             isAvailable: data.isAvailable !== false,
                             isActive: data.isActive !== false,
+                            isOnSale: data.isOnSale,
+                            salePercentage: data.salePercentage,
                         } as Product;
                     });
 
@@ -64,7 +66,14 @@ const CustomerHome: React.FC<CustomerHomeProps> = ({ onProductAdd, onProductRemo
 
                 const activeCategories = categoriesData.filter(c => c.isActive);
                 const activeCategoryIds = new Set(activeCategories.map(c => c.id));
-                const activeProducts = productsData.filter(p => p.isActive && activeCategoryIds.has(p.categoryId));
+                let activeProducts = productsData.filter(p => p.isActive && activeCategoryIds.has(p.categoryId));
+
+                // Sort products to show sale items first
+                activeProducts.sort((a, b) => {
+                    if (a.isOnSale && !b.isOnSale) return -1;
+                    if (!a.isOnSale && b.isOnSale) return 1;
+                    return 0;
+                });
 
                 setAllProducts(activeProducts);
                 setProducts(activeProducts);

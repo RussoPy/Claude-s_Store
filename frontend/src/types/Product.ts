@@ -8,4 +8,6 @@ export interface Product {
     quantity?: number;
     isAvailable?: boolean;
     isActive?: boolean;
+    isOnSale?: boolean;
+    salePercentage?: number;
 }

@@ -1,7 +1,10 @@
-import React, { useContext, useEffect } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { CartContext } from '../context/CartContext';
 import { PayPalScriptProvider, PayPalButtons, usePayPalScriptReducer } from "@paypal/react-paypal-js";
 import { useNavigate } from 'react-router-dom';
+import { db } from '../firebase';
+import { collection, query, where, getDocs, Timestamp } from 'firebase/firestore';
+import { Coupon } from '../types/Coupon';
 
 // Custom component to handle the loading state of the PayPal script
 const PayPalCheckoutButton = ({ createOrder, onApprove, onError }: any) => {
@@ -28,12 +31,57 @@ const PayPalCheckoutButton = ({ createOrder, onApprove, onError }: any) => {
 const CheckoutPage = () => {
   const cartContext = useContext(CartContext);
   const navigate = useNavigate();
+  const [couponCode, setCouponCode] = useState('');
+  const [finalTotal, setFinalTotal] = useState(0);
+  const [discountAmount, setDiscountAmount] = useState(0);
+  const [couponMessage, setCouponMessage] = useState('');
+  const { getCartTotal, clearCart, cartItems } = cartContext || {};
+
+  useEffect(() => {
+    if (getCartTotal) {
+      setFinalTotal(getCartTotal());
+    }
+  }, [cartItems, getCartTotal]);
 
   if (!cartContext) {
     return <div>טוען...</div>;
   }
 
-  const { getCartTotal, clearCart, cartItems } = cartContext;
+  const handleApplyCoupon = async () => {
+    if (!couponCode) return;
+    setCouponMessage('');
+    setDiscountAmount(0);
+
+    const couponsRef = collection(db, 'coupons');
+    const q = query(couponsRef, where("code", "==", couponCode.trim()), where("isActive", "==", true));
+
+    try {
+      const querySnapshot = await getDocs(q);
+      if (querySnapshot.empty) {
+        setCouponMessage('קופון לא חוקי');
+        setFinalTotal(getCartTotal!());
+        return;
+      }
+
+      const coupon = querySnapshot.docs[0].data() as Coupon;
+
+      if (coupon.expiresAt.toDate() < new Date()) {
+        setCouponMessage('הקופון פג תוקף');
+        setFinalTotal(getCartTotal!());
+        return;
+      }
+
+      const total = getCartTotal!();
+      const discount = (total * coupon.percentageOff) / 100;
+      setDiscountAmount(discount);
+      setFinalTotal(total - discount);
+      setCouponMessage(`הנחה של ${coupon.percentageOff}% הופעלה!`);
+
+    } catch (error) {
+      setCouponMessage('שגיאה באימות הקופון');
+      setFinalTotal(getCartTotal!());
+    }
+  };
 
   const createOrder = (data: any, actions: any) => {
     return actions.order.create({
@@ -41,7 +89,7 @@ const CheckoutPage = () => {
         {
           amount: {
             currency_code: "ILS",
-            value: getCartTotal().toFixed(2),
+            value: finalTotal.toFixed(2),
           },
         },
       ],
@@ -59,7 +107,9 @@ const CheckoutPage = () => {
           },
           body: JSON.stringify({
             paypalDetails: details,
-            cartItems: cartItems
+            cartItems: cartItems,
+            couponCode: couponCode,
+            finalTotal: finalTotal.toFixed(2)
           })
         });
 
@@ -68,7 +118,7 @@ const CheckoutPage = () => {
         if (response.ok) {
           const displayId = orderData.paypal_capture_id || details.id;
           alert(`תודה על ההזמנה!\n\nההזמנה התקבלה בהצלחה.\n\nמספר עסקה לאישור:\n${displayId}`);
-          clearCart();
+          cartContext.clearCart();
           navigate('/');
         } else {
           throw new Error(orderData.message || 'שגיאה בשמירת ההזמנה');
@@ -91,9 +141,30 @@ const CheckoutPage = () => {
       <div className="checkout-page" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minHeight: '80vh' }}>
         <div style={{ width: '100%', maxWidth: '500px', textAlign: 'center' }}>
           <h1>תשלום</h1>
-          <div className="order-summary">
+          <div className="order-summary" style={{ background: '#f8f9fa', padding: '20px', borderRadius: '8px' }}>
             <h2>סיכום הזמנה</h2>
-            <p>סה"כ: ₪{getCartTotal().toFixed(2)}</p>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span>סה"כ ביניים:</span>
+              <span>₪{cartContext.getCartTotal().toFixed(2)}</span>
+            </div>
+            <div className="coupon-area" style={{ margin: '15px 0' }}>
+              <div className="input-group">
+                <input type="text" className="form-control" placeholder="קוד קופון" value={couponCode} onChange={e => setCouponCode(e.target.value)} />
+                <button className="btn btn-outline-secondary" type="button" onClick={handleApplyCoupon}>החל</button>
+              </div>
+              {couponMessage && <p className={`mt-2 ${discountAmount > 0 ? 'text-success' : 'text-danger'}`}>{couponMessage}</p>}
+            </div>
+            {discountAmount > 0 && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', color: 'red' }}>
+                <span>הנחה:</span>
+                <span>-₪{discountAmount.toFixed(2)}</span>
+              </div>
+            )}
+            <hr />
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '1.2em' }}>
+              <span>סה"כ לתשלום:</span>
+              <span>₪{finalTotal.toFixed(2)}</span>
+            </div>
           </div>
           <div style={{ marginTop: '20px', zIndex: 0 }}>
             <PayPalCheckoutButton

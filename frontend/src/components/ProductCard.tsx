@@ -32,13 +32,30 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onProductAdd, onProd
     };
 
     return (
-        <div className="product-card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', opacity: disabled ? 0.6 : 1 }}>
+        <div className="product-card" style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', opacity: disabled ? 0.6 : 1 }}>
+            {product.isOnSale && product.salePercentage && (
+                <div className="sale-badge" style={{ position: 'absolute', top: '20px', left: '20px', background: 'red', color: 'white', padding: '5px 10px', borderRadius: '5px', fontSize: '14px', fontWeight: 'bold' }}>
+                    {product.salePercentage}% OFF!
+                </div>
+            )}
             <div style={{ width: '100%', aspectRatio: '3/2', background: 'transparent', borderRadius: '18px', overflow: 'hidden', marginTop: 15, marginBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <img src={product.image || ''} alt={product.name} style={{ width: '90%', height: '90%', objectFit: 'cover', borderRadius: '18px', background: 'transparent' }} />
             </div>
             <h3>{product.name}</h3>
             {label && <p style={{ color: 'red', fontWeight: 'bold' }}>{label}</p>}
-            <p>₪{product.price.toFixed(2)}</p>
+
+            {product.isOnSale && product.salePercentage ? (
+                <div className="price-container" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <p style={{ textDecoration: 'line-through', color: '#888', marginBottom: 0 }}>
+                        ₪{product.price.toFixed(2)}
+                    </p>
+                    <p style={{ fontWeight: 'bold', color: 'red', marginBottom: 0 }}>
+                        ₪{(product.price * (1 - product.salePercentage / 100)).toFixed(2)}
+                    </p>
+                </div>
+            ) : (
+                <p>₪{product.price.toFixed(2)}</p>
+            )}
 
             {!isAdmin && (
                 itemInCart ? (

@@ -121,6 +121,23 @@ def send_order_emails(order_data):
     customer_name = order_data.get('customer_name', 'לקוח') 
     payer_email = order_data.get('payer_email')
     payer_phone = order_data.get('payer_phone', 'לא צוין')
+    
+    coupon_used = order_data.get('coupon_used')
+    discount_percentage = order_data.get('discount_percentage')
+
+    # --- Construct Discount Information ---
+    discount_text = ""
+    discount_html = ""
+    if coupon_used and discount_percentage:
+        original_price = total_price / (1 - discount_percentage / 100)
+        discount_text = f"\nקופון בשימוש: {coupon_used} ({discount_percentage}% הנחה)\nסכום מקורי: ₪{original_price:.2f}\n"
+        discount_html = f"""
+        <p style="color: #28a745;">
+            <strong>קופון בשימוש:</strong> {coupon_used} ({discount_percentage}% הנחה)
+            <br>
+            <span style="text-decoration: line-through;">סכום מקורי: ₪{original_price:.2f}</span>
+        </p>
+        """
 
     # --- Details for Admin ---
     payment_time_raw = order_data.get('payment_time')
@@ -154,6 +171,7 @@ def send_order_emails(order_data):
 
     סיכום הזמנה:
     {items_list_text}
+    {discount_text}
     סך הכל לתשלום: ₪{total_price:.2f}
 
     מספר ההזמנה שלך למעקב הוא: {order_id_for_email}
@@ -170,6 +188,7 @@ def send_order_emails(order_data):
         <ul style="list-style-type: none; padding: 0;">
             {items_list_html}
         </ul>
+        {discount_html}
         <p style="font-size: 1.1em;"><strong>סך הכל לתשלום: ₪{total_price:.2f}</strong></p>
         <p><strong>מספר ההזמנה שלך למעקב הוא:</strong> {order_id_for_email}</p>
         <hr>
@@ -206,6 +225,7 @@ def send_order_emails(order_data):
 
     מוצרים:
     {items_list_text}
+    {discount_text}
     סך הכל: ₪{total_price:.2f}
     """
     
@@ -231,6 +251,7 @@ def send_order_emails(order_data):
         <ul style="list-style-type: none; padding: 0; margin-right: 0; padding-right: 0;">
             {items_list_html}
         </ul>
+        {discount_html}
         <p style="font-size: 1.1em;"><strong>סך הכל: ₪{total_price:.2f}</strong></p>
     </div>
     """
@@ -248,100 +269,101 @@ def send_order_emails(order_data):
 @permission_classes([AllowAny])
 def create_order(request):
     """
-    View to create a new order in Firestore after successful and VERIFIED PayPal payment.
+    Handles the creation of an order after a successful PayPal payment.
+    - Receives PayPal details and cart items from the frontend.
+    - Verifies the payment with PayPal's API.
+    - Calculates the total from cart items and validates against the PayPal amount.
+    - Saves the order to Firestore.
+    - Sends confirmation emails.
     """
-    if request.method == 'POST':
+    try:
+        db = initialize_firebase()
+        data = json.loads(request.body)
+        paypal_details = data.get('paypalDetails', {})
+        cart_items = data.get('cartItems', [])
+        coupon_code = data.get('couponCode', None)
+        
+        paypal_order_id = paypal_details.get('id')
+
+        if not paypal_order_id or not cart_items:
+            return JsonResponse({'message': 'Missing PayPal order ID or cart items.'}, status=400)
+
+        # 1. Verify payment with PayPal
+        print(f"Verifying PayPal Order ID: {paypal_order_id}")
+        verified_paypal_order = verify_paypal_payment(paypal_order_id)
+        if not verified_paypal_order:
+            print(f"CRITICAL: PayPal payment verification failed for Order ID: {paypal_order_id}")
+            return JsonResponse({'message': 'PayPal payment verification failed.'}, status=400)
+        
+        print(f"PayPal verification successful for Order ID: {paypal_order_id}")
+
+        # 2. Calculate server-side total and apply coupon if applicable
+        server_total = sum(float(item['price']) * int(item['quantity']) for item in cart_items)
+        discount_percentage = 0
+
+        if coupon_code:
+            print(f"Attempting to apply coupon: {coupon_code}")
+            coupons_ref = db.collection('coupons')
+            coupon_query = coupons_ref.where('code', '==', coupon_code).where('isActive', '==', True).limit(1).stream()
+            
+            found_coupon = None
+            for coupon_doc in coupon_query:
+                found_coupon = coupon_doc.to_dict()
+                break
+
+            if found_coupon:
+                expires_at = found_coupon.get('expiresAt')
+                if expires_at and expires_at.timestamp() > datetime.datetime.now().timestamp():
+                    discount_percentage = float(found_coupon.get('percentageOff', 0))
+                    server_total *= (1 - discount_percentage / 100)
+                    print(f"Applied {discount_percentage}% discount. New total: {server_total}")
+                else:
+                    print(f"Coupon '{coupon_code}' has expired.")
+            else:
+                print(f"Coupon '{coupon_code}' not found or is not active.")
+
+
+        # 3. Validate server total against PayPal total
+        paypal_amount = float(verified_paypal_order["purchase_units"][0]["amount"]["value"])
+        
+        # Use a small tolerance for floating point comparison
+        if not -0.02 <= server_total - paypal_amount <= 0.02:
+            print(f"CRITICAL: Amount mismatch for Order {paypal_order_id}. Client: {server_total:.2f}, PayPal: {paypal_amount}")
+            return JsonResponse({'message': 'Order amount validation failed.'}, status=400)
+
+        # 4. Prepare and save order data to Firestore
+        purchase_unit = verified_paypal_order.get("purchase_units", [{}])[0]
+        payer_info = verified_paypal_order.get("payer", {})
+        
+        order_data = {
+            "order_id": paypal_order_id,
+            "paypal_capture_id": purchase_unit.get("payments", {}).get("captures", [{}])[0].get("id"),
+            "status": verified_paypal_order.get("status"),
+            "amount": purchase_unit.get("amount"),
+            "items": cart_items,
+            "payer_email": payer_info.get("email_address"),
+            "customer_name": f"{payer_info.get('name', {}).get('given_name', '')} {payer_info.get('name', {}).get('surname', '')}".strip(),
+            "shipping_address": purchase_unit.get("shipping", {}).get("address", {}),
+            "payment_time": verified_paypal_order.get("create_time"), # or update_time
+            "created_at": firestore.SERVER_TIMESTAMP,
+            "coupon_used": coupon_code if discount_percentage > 0 else None,
+            "discount_percentage": discount_percentage
+        }
+
+        db.collection('orders').add(order_data)
+        
+        # 5. Send confirmation emails
         try:
-            db = initialize_firebase()
-            data = json.loads(request.body)
-            
-            paypal_order_id_from_client = data.get('paypalDetails', {}).get('id')
-            cart_items = data.get('cartItems')
-            
-            if not paypal_order_id_from_client or not cart_items:
-                return JsonResponse({'status': 'error', 'message': 'Missing order data'}, status=400)
-
-            # --- VERIFICATION STEP ---
-            # Instead of trusting the client, we verify the order with PayPal directly.
-            print(f"Verifying PayPal Order ID: {paypal_order_id_from_client}")
-            verified_paypal_order = verify_paypal_payment(paypal_order_id_from_client)
-
-            if not verified_paypal_order:
-                print(f"PayPal verification failed for Order ID: {paypal_order_id_from_client}")
-                return JsonResponse({'status': 'error', 'message': 'PayPal payment verification failed.'}, status=400)
-            
-            print(f"PayPal verification successful for Order ID: {paypal_order_id_from_client}")
-
-            # --- DATA FROM VERIFIED SOURCE ---
-            # Use the verified data from PayPal as the source of truth.
-            purchase_unit = verified_paypal_order.get('purchase_units', [{}])[0]
-            payer_info = verified_paypal_order.get('payer', {})
-
-            # Security Check: Compare client-side total with server-side verified total
-            client_total = sum(float(item['price']) * int(item['quantity']) for item in cart_items)
-            paypal_total = float(purchase_unit.get('amount', {}).get('value', '0'))
-
-            if not abs(client_total - paypal_total) < 0.01:
-                print(f"CRITICAL: Amount mismatch for Order {paypal_order_id_from_client}. Client: {client_total}, PayPal: {paypal_total}")
-                return JsonResponse({'status': 'error', 'message': 'Order total mismatch.'}, status=400)
-
-            # Extract the relevant IDs and timestamps from the verified data.
-            try:
-                capture_details = purchase_unit.get('payments', {}).get('captures', [{}])[0]
-                capture_id = capture_details.get('id')
-                payment_time = capture_details.get('create_time')
-            except (KeyError, IndexError):
-                capture_id = 'N/A'
-                payment_time = None
-                print(f"WARNING: Could not find capture details for order {paypal_order_id_from_client}.")
-
-            # Extract full name and address details
-            shipping_info = purchase_unit.get('shipping', {})
-            shipping_address_obj = shipping_info.get('address', {})
-            
-            payer_name_obj = payer_info.get('name', {})
-            payer_full_name = f"{payer_name_obj.get('given_name', '')} {payer_name_obj.get('surname', '')}".strip()
-            
-            # The primary customer name should be from the shipping details if available, otherwise use payer name.
-            customer_name_for_order = shipping_info.get('name', {}).get('full_name', payer_full_name) or 'N/A'
-
-            # Prepare the data for Firestore using the verified data
-            order_data = {
-                'paypal_order_id': verified_paypal_order.get('id'),
-                'paypal_capture_id': capture_id,
-                'customer_name': customer_name_for_order, # Replaces payer_name
-                'payer_email': payer_info.get('email_address', 'N/A'),
-                'payer_phone': payer_info.get('phone', {}).get('phone_number', {}).get('national_number', 'N/A'),
-                'amount': purchase_unit.get('amount', {}),
-                'status': verified_paypal_order.get('status'),
-                'items': cart_items,
-                'created_at': datetime.datetime.now(datetime.timezone.utc),
-                'payment_time': payment_time,
-                'shipping_address': shipping_address_obj,
-            }
-            
-            # Add the document to Firestore to get its reference/ID
-            orders_collection = db.collection('orders')
-            update_time, order_ref = orders_collection.add(order_data)
-            
-            # Now that we have the ID, add it to our data object
-            order_data['order_id'] = order_ref.id
-            
-            # Send emails with the complete data
-            try:
-                send_order_emails(order_data)
-            except Exception as e:
-                # Log this error but don't fail the entire request,
-                # as the payment was successful.
-                print(f"CRITICAL: Could not send order emails for order {order_data.get('order_id', 'N/A')}. PayPal Capture ID: {order_data.get('paypal_capture_id', 'N/A')}. Error: {e}")
-
-            # Return the Firestore Order ID and the PayPal Capture ID (which is searchable in the dashboard)
-            return JsonResponse({'status': 'success', 'firestore_order_id': order_ref.id, 'paypal_capture_id': capture_id})
-            
-        except ValueError as e: # Catch specific error for missing creds
-            print(f"Configuration Error: {e}")
-            return JsonResponse({'status': 'error', 'message': 'Server configuration error.'}, status=500)
+            send_order_emails(order_data)
         except Exception as e:
-            return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
-    
-    return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=405) 
+            # Log email error but don't fail the entire transaction
+            print(f"ERROR: Could not send confirmation emails for order {paypal_order_id}: {e}")
+
+        return JsonResponse({'message': 'Order created successfully', 'paypal_capture_id': order_data['paypal_capture_id']}, status=200)
+
+    except json.JSONDecodeError:
+        return JsonResponse({'message': 'Invalid JSON in request body.'}, status=400)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({'message': f'An unexpected error occurred: {e}'}, status=500) 

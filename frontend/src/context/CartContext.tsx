@@ -36,6 +36,10 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     const openCart = () => setIsCartOpen(true);
 
     const addToCart = (product: Product) => {
+        const price = product.isOnSale && product.salePercentage
+            ? product.price * (1 - product.salePercentage / 100)
+            : product.price;
+
         setCartItems(prevItems => {
             const itemInCart = prevItems.find(item => item.id === product.id);
             if (itemInCart) {
@@ -43,7 +47,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
                     item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
                 );
             }
-            return [...prevItems, { ...product, quantity: 1 }];
+            return [...prevItems, { ...product, price, quantity: 1 }];
         });
         openCart();
     };
