@@ -142,12 +142,11 @@ if DEBUG:
         raise ValueError("The 'LOCALHOST' environment variable must be set in your .env file for development.")
     CORS_ALLOWED_ORIGINS = [local_client_url]
 else:
-    # In production, we only allow our live frontend domain.
-    prod_client_url = os.getenv('PRODUCTIONCLIENT', 'http://dummy-production-client.com')
+    # In production (or non-debug), use a placeholder if no frontend exists yet
+    prod_client_url = os.getenv('PRODUCTIONCLIENT', 'http://placeholder.local')
 
-    # Fail only if we're in production and it's still the dummy value
-    if not prod_client_url or prod_client_url == 'http://dummy-production-client.com':
-        raise ValueError("The 'PRODUCTIONCLIENT' environment variable must be set in your .env file for production.")
+    if prod_client_url == 'http://placeholder.local':
+        print("⚠️ WARNING: Using placeholder PRODUCTIONCLIENT. Set a real domain before production launch.")
 
     CORS_ALLOWED_ORIGINS = [prod_client_url]
 
