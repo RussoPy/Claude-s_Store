@@ -35,7 +35,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onProductAdd, onProd
         <div className="product-card" style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', opacity: disabled ? 0.6 : 1 }}>
             {product.isOnSale && product.salePercentage && (
                 <div className="sale-badge" style={{ position: 'absolute', top: '20px', left: '20px', background: 'red', color: 'white', padding: '5px 10px', borderRadius: '5px', fontSize: '14px', fontWeight: 'bold' }}>
-                    {product.salePercentage}% OFF!
+                    {product.salePercentage}% הנחה!
                 </div>
             )}
             <div style={{ width: '100%', aspectRatio: '3/2', background: 'transparent', borderRadius: '18px', overflow: 'hidden', marginTop: 15, marginBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
