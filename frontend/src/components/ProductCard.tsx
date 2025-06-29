@@ -42,20 +42,26 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onProductAdd, onProd
                 <img src={product.image || ''} alt={product.name} style={{ width: '90%', height: '90%', objectFit: 'cover', borderRadius: '18px', background: 'transparent' }} />
             </div>
             <h3>{product.name}</h3>
-            {label && <p style={{ color: 'red', fontWeight: 'bold' }}>{label}</p>}
-
             {product.isOnSale && product.salePercentage ? (
-                <div className="price-container" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <p style={{ textDecoration: 'line-through', color: '#888', marginBottom: 0 }}>
+                <div className="price-container" style={{ display: 'flex', alignItems: 'center', gap: '10px', margin: '0 0 2px 0' }}>
+                    <span style={{ textDecoration: 'line-through', color: '#888', fontSize: '1em', fontWeight: 400, background: '#f8d7da', borderRadius: 6, padding: '2px 8px', marginBottom: 0 }}>
                         ₪{product.price.toFixed(2)}
-                    </p>
-                    <p style={{ fontWeight: 'bold', color: 'red', marginBottom: 0 }}>
+                    </span>
+                    <span style={{ fontWeight: 700, color: '#fff', background: 'linear-gradient(90deg, #1a9da1 0%, #0e5a5e 100%)', borderRadius: 8, padding: '4px 16px', fontSize: '1.18em', boxShadow: '0 2px 8px rgba(26,157,161,0.08)', marginBottom: 0, letterSpacing: 1 }}>
                         ₪{(product.price * (1 - product.salePercentage / 100)).toFixed(2)}
-                    </p>
+                    </span>
                 </div>
             ) : (
-                <p>₪{product.price.toFixed(2)}</p>
+                <span style={{ fontWeight: 700, color: '#fff', background: 'linear-gradient(90deg, #1a9da1 0%, #0e5a5e 100%)', borderRadius: 8, padding: '4px 16px', fontSize: '1.18em', boxShadow: '0 2px 8px rgba(26,157,161,0.08)', marginBottom: 0, letterSpacing: 1, display: 'inline-block', margin: '0 0 2px 0' }}>
+                    ₪{product.price.toFixed(2)}
+                </span>
             )}
+            {product.description && (
+                <p style={{ color: '#555', fontSize: '1em', margin: '2px 0 6px 0', textAlign: 'center', minHeight: 24 }}>
+                    {product.description}
+                </p>
+            )}
+            {label && <p style={{ color: 'red', fontWeight: 'bold' }}>{label}</p>}
 
             {!isAdmin && (
                 itemInCart ? (
