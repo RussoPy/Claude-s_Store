@@ -61,7 +61,9 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onProductAdd, onProd
                     {product.description}
                 </p>
             )}
-            {label && <p style={{ color: 'red', fontWeight: 'bold' }}>{label}</p>}
+            <div style={{ height: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {label && <p style={{ color: 'red', fontWeight: 'bold', margin: 0 }}>{label}</p>}
+            </div>
 
             {!isAdmin && (
                 itemInCart ? (

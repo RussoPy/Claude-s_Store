@@ -8,3 +8,17 @@ env/
 venv/
 backend/venv/ 
 .env
+
+# Firebase
+frontend/.firebase/
+/.firebase/hosting.*.cache
+
+# Frontend build artifacts and dependencies
+frontend/build/
+frontend/node_modules/
+
+# General cache and log files
+.cache/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

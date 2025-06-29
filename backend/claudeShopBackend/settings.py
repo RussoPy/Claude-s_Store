@@ -30,7 +30,7 @@ DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
 ALLOWED_HOSTS = [
     'localhost',
     '127.0.0.1',
-    'claude-s-store.onrender.com',
+    'claude-s-store-1.onrender.com',
 ]
 
 
