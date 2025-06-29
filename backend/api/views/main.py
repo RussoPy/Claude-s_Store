@@ -2,6 +2,8 @@ from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAdminUser, AllowAny
 from firebase_admin import firestore
+from django.http import JsonResponse
+from rest_framework.decorators import api_view
 
 # The OrderViewSet still uses Django's ORM and serializers.
 # This would be the next thing to migrate if you want orders in Firestore too.
@@ -192,3 +194,10 @@ class OrderViewSet(viewsets.ModelViewSet):
     """
     queryset = Order.objects.all()
     serializer_class = OrderSerializer 
+
+@api_view(['GET'])
+def health_check(request):
+    """
+    Simple health check endpoint for container monitoring
+    """
+    return JsonResponse({'status': 'healthy'}, status=200) 
