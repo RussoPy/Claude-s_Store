@@ -3,9 +3,11 @@ import { CartContext } from '../context/CartContext';
 import { PayPalScriptProvider, PayPalButtons, usePayPalScriptReducer } from "@paypal/react-paypal-js";
 import { useNavigate } from 'react-router-dom';
 import { db } from '../firebase';
-import { collection, query, where, getDocs, Timestamp } from 'firebase/firestore';
+import { collection, query, where, getDocs, Timestamp, doc, getDoc } from 'firebase/firestore';
 import { Coupon } from '../types/Coupon';
 import ThankYouPage from './ThankYouPage';
+import { getGuestSessionId } from '../utils/guestSession';
+import { rateLimiter } from '../utils/rateLimiter';
 
 // Custom component to handle the loading state of the PayPal script
 const PayPalCheckoutButton = ({ createOrder, onApprove, onError, onCancel }: any) => {
@@ -65,6 +67,7 @@ const CheckoutPage = () => {
   }
 
   const handleApplyCoupon = async () => {
+    if (!rateLimiter.canRun('applyCoupon')) return;
     if (!couponCode) return;
     setCouponMessage('');
     setDiscountAmount(0);
@@ -99,20 +102,39 @@ const CheckoutPage = () => {
     }
   };
 
-  const createOrder = (data: any, actions: any) => {
-    // Guard against invalid or zero totals
-    if (typeof finalTotal !== 'number' || finalTotal <= 0) {
-      console.error("Invalid finalTotal passed to PayPal:", finalTotal);
-      alert("סכום ההזמנה אינו תקין. אנא רענן את העמוד או נסה שוב.");
-      return Promise.reject(new Error("Invalid total amount."));
+  // Fetch cart from Firestore before creating PayPal order
+  const fetchCartFromFirestore = async () => {
+    const sessionId = getGuestSessionId();
+    const cartDocRef = doc(db, 'carts', sessionId);
+    const cartSnap = await getDoc(cartDocRef);
+    if (cartSnap.exists()) {
+      return cartSnap.data().items || [];
     }
+    return [];
+  };
 
+  const createOrder = async (data: any, actions: any) => {
+    if (!rateLimiter.canRun('checkout')) return Promise.reject(new Error('Too many attempts. Please wait.'));
+    // Fetch latest cart from Firestore and compare
+    const firestoreCart = await fetchCartFromFirestore();
+    if (!firestoreCart.length) {
+      alert('העגלה שלך ריקה.');
+      return Promise.reject(new Error('Empty cart.'));
+    }
+    // Optionally: compare firestoreCart to cartItems and show warning if mismatch
+    // (for now, just use firestoreCart for the order)
+    const total = firestoreCart.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0);
+    if (typeof total !== 'number' || total <= 0) {
+      alert('סכום ההזמנה אינו תקין.');
+      return Promise.reject(new Error('Invalid total.'));
+    }
+    // Use the total from Firestore for PayPal
     return actions.order.create({
       purchase_units: [
         {
           amount: {
-            currency_code: "ILS",
-            value: finalTotal.toFixed(2),
+            currency_code: 'ILS',
+            value: total.toFixed(2),
           },
         },
       ],

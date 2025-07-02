@@ -7,6 +7,7 @@ import CartPage from './pages/CartPage';
 import CheckoutPage from './pages/CheckoutPage';
 import AdminLoginPage from './pages/AdminLoginPage';
 import ThankYouPage from './pages/ThankYouPage';
+import TermsPage from './pages/TermsPage';
 import { CartProvider } from './context/CartContext';
 import FloatingCartButton from './components/FloatingCartButton';
 import './App.css';
@@ -74,6 +75,7 @@ function App() {
             <Route path="/cart" element={<CartPage />} />
             <Route path="/checkout" element={<CheckoutPage />} />
             <Route path="/thankyou" element={<ThankYouPage />} />
+            <Route path="/terms" element={<TermsPage />} />
             <Route path="/admin/login" element={<AdminLoginPage />} />
           </Routes>
         </main>
