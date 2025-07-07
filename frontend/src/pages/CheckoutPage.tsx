@@ -202,10 +202,13 @@ const CheckoutPage = () => {
             </div>
             <div className="coupon-area" style={{ margin: '15px 0' }}>
               <div className="input-group">
-                <input type="text" className="form-control" placeholder="קוד קופון" value={couponCode} onChange={e => setCouponCode(e.target.value)} />
+                <label htmlFor="coupon-code" className="visually-hidden">קוד קופון</label>
+                <input id="coupon-code" type="text" className="form-control" placeholder="קוד קופון" value={couponCode} onChange={e => setCouponCode(e.target.value)} aria-describedby="coupon-message" />
                 <button className="btn btn-outline-secondary" type="button" onClick={handleApplyCoupon}>החל</button>
               </div>
-              {couponMessage && <p className={`mt-2 ${discountAmount > 0 ? 'text-success' : 'text-danger'}`}>{couponMessage}</p>}
+              <div id="coupon-message" role="status" aria-live="polite">
+                {couponMessage && <p className={`mt-2 ${discountAmount > 0 ? 'text-success' : 'text-danger'}`}>{couponMessage}</p>}
+              </div>
             </div>
             {discountAmount > 0 && (
               <div style={{ display: 'flex', justifyContent: 'space-between', color: 'red' }}>
@@ -236,7 +239,7 @@ const CheckoutPage = () => {
               </div>
             )}
             <hr />
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '1.2em' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '1.2em' }} role="status" aria-live="polite">
               <span>סה"כ לתשלום:</span>
               <span>₪{finalTotal.toFixed(2)}</span>
             </div>

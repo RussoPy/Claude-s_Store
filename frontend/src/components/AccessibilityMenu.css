@@ -1,0 +1,138 @@
+.accessibility-menu {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1050;
+    font-family: 'Helvetica Neue', sans-serif;
+}
+
+.menu-toggle-button {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background-color: #0e7c80;
+    /* Match site's primary button color */
+    color: white;
+    font-size: 28px;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    /* Soften shadow */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: background-color 0.2s ease;
+}
+
+.menu-toggle-button:hover {
+    background-color: #11999e;
+    /* Lighter shade for hover */
+}
+
+.accessibility-controls {
+    position: absolute;
+    bottom: 80px;
+    /* Increased spacing from button */
+    right: 0;
+    width: 280px;
+    /* Slightly wider */
+    background: #f9f9f9;
+    /* Softer background */
+    border-radius: 12px;
+    /* More rounded */
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    padding: 20px;
+    border: 1px solid #e0e0e0;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
+    visibility: hidden;
+}
+
+.accessibility-menu.open .accessibility-controls {
+    opacity: 1;
+    transform: translateY(0);
+    visibility: visible;
+}
+
+.accessibility-controls h3 {
+    margin-top: 0;
+    font-size: 18px;
+    /* Larger title */
+    font-weight: 600;
+    color: #333;
+    text-align: center;
+    border-bottom: 1px solid #e0e0e0;
+    padding-bottom: 15px;
+    margin-bottom: 15px;
+}
+
+.control-group {
+    margin-bottom: 20px;
+}
+
+.control-group:last-child {
+    margin-bottom: 0;
+}
+
+.control-group h4 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #555;
+    margin-bottom: 12px;
+}
+
+.text-size-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.text-size-controls button {
+    background-color: #fff;
+    color: #333;
+    border: 1px solid #ccc;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+    flex-grow: 1;
+    /* Make buttons take up equal space */
+    margin: 0 4px;
+    /* Add margin between buttons */
+}
+
+.text-size-controls button:first-child {
+    margin-left: 0;
+}
+
+.text-size-controls button:last-child {
+    margin-right: 0;
+}
+
+.text-size-controls button:hover,
+.control-group label:hover {
+    background-color: #f0f0f0;
+    border-color: #999;
+}
+
+.control-group label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    padding: 10px;
+    background: #fff;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.control-group input[type="checkbox"] {
+    margin-right: 10px;
+    width: 18px;
+    height: 18px;
+    accent-color: #0e7c80;
+    /* Style the checkmark color */
+}

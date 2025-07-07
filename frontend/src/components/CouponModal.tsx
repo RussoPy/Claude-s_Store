@@ -2,12 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { Coupon } from '../types/Coupon';
 import { db } from '../firebase';
 import { collection, getDocs, addDoc, updateDoc, doc, Timestamp, query, where, deleteDoc } from 'firebase/firestore';
+import CustomModal from './CustomModal'; // Using the accessible modal
 
 interface CouponModalProps {
+    show: boolean;
     onHide: () => void;
 }
 
-const CouponModal: React.FC<CouponModalProps> = ({ onHide }) => {
+const CouponModal: React.FC<CouponModalProps> = ({ show, onHide }) => {
     const [coupons, setCoupons] = useState<Coupon[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -94,6 +96,7 @@ const CouponModal: React.FC<CouponModalProps> = ({ onHide }) => {
     };
 
     const handleDeleteCoupon = async (couponId: string) => {
+        // Replace window.confirm with an accessible confirmation dialog in a real app
         if (window.confirm('Are you sure you want to permanently delete this coupon?')) {
             const couponRef = doc(db, 'coupons', couponId);
             try {
@@ -116,75 +119,75 @@ const CouponModal: React.FC<CouponModalProps> = ({ onHide }) => {
     };
 
     return (
-        <div className="modal-backdrop">
-            <div className="modal-content" style={{ maxWidth: '800px' }}>
-                <div className="modal-header" style={{ display: 'flex', alignItems: 'center' }}>
-                <h5 className="modal-title" >נהל קופונים</h5>
-                    <button type="button" className="btn-close" style={{ color: 'black', margin: 0 }} onClick={onHide}>&times;</button>
-                   
-                </div>
-                <div className="modal-body">
-                    {/* Form for creating a new coupon */}
-                    <div className="card mb-4">
-                        <div className="card-body">
-                            <h5 className="card-title">{editingCoupon ? 'ערוך קופון' : 'צור קופון חדש'}</h5>
-                            <form onSubmit={handleFormSubmit}>
-                                <div className="row">
-                                    <div className="col-md-4">
-                                        <label className="form-label">קוד קופון</label>
-                                        <input type="text" className="form-control" value={couponCode} onChange={e => setCouponCode(e.target.value)} required disabled={!!editingCoupon} />
-                                    </div>
-                                    <div className="col-md-4">
-                                        <label className="form-label">אחוז הנחה</label>
-                                        <input type="number" className="form-control" value={percentageOff} onChange={e => setPercentageOff(Number(e.target.value))} required min="1" max="100" />
-                                    </div>
-                                    <div className="col-md-4">
-                                        <label className="form-label">תאריך תפוגה</label>
-                                        <input type="date" className="form-control" value={expiresAt} onChange={e => setExpiresAt(e.target.value)} required />
-                                    </div>
-                                </div>
-                                <button type="submit" className="btn btn-primary mt-3">{editingCoupon ? 'שמור שינויים' : 'צור קופון'}</button>
-                                {editingCoupon && <button type="button" className="btn btn-secondary mt-3 ms-2" onClick={resetForm}>בטל</button>}
-                            </form>
+        <CustomModal show={show} onHide={onHide} title="נהל קופונים">
+            <div className="card mb-4">
+                <div className="card-body">
+                    <h5 className="card-title">{editingCoupon ? 'ערוך קופון' : 'צור קופון חדש'}</h5>
+                    <form onSubmit={handleFormSubmit} aria-describedby="coupon-error">
+                        <div className="row">
+                            <div className="col-md-4">
+                                <label htmlFor="couponCode" className="form-label">קוד קופון</label>
+                                <input id="couponCode" type="text" className="form-control" value={couponCode} onChange={e => setCouponCode(e.target.value)} required disabled={!!editingCoupon} />
+                            </div>
+                            <div className="col-md-4">
+                                <label htmlFor="percentageOff" className="form-label">אחוז הנחה</label>
+                                <input id="percentageOff" type="number" className="form-control" value={percentageOff} onChange={e => setPercentageOff(Number(e.target.value))} required min="1" max="100" />
+                            </div>
+                            <div className="col-md-4">
+                                <label htmlFor="expiresAt" className="form-label">תאריך תפוגה</label>
+                                <input id="expiresAt" type="date" className="form-control" value={expiresAt} onChange={e => setExpiresAt(e.target.value)} required />
+                            </div>
                         </div>
-                    </div>
-
-                    {/* Table of existing coupons */}
-                    <h5>קופונים קיימים</h5>
-                    {isLoading ? <p>טוען...</p> : error ? <p className="text-danger">{error}</p> : (
-                        <table className="table">
-                            <thead>
-                                <tr>
-                                    <th>קוד</th>
-                                    <th>הנחה</th>
-                                    <th>בתוקף עד</th>
-                                    <th>פעיל</th>
-                                    <th>פעולות</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {coupons.map(coupon => (
-                                    <tr key={coupon.id}>
-                                        <td>{coupon.code}</td>
-                                        <td>{coupon.percentageOff}%</td>
-                                        <td>{coupon.expiresAt.toDate().toLocaleDateString('he-IL')}</td>
-                                        <td>
-                                            <div className="form-check form-switch d-flex justify-content-right">
-                                                <input className="form-check-input" type="checkbox" checked={coupon.isActive} onChange={() => handleToggleActive(coupon)} />
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <button className="btn btn-sm btn-secondary me-1" onClick={() => handleEditClick(coupon)}>ערוך</button>
-                                            <button className="btn btn-sm btn-danger" onClick={() => handleDeleteCoupon(coupon.id)}>מחק</button>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    )}
+                        {error && <p id="coupon-error" className="text-danger" role="alert">{error}</p>}
+                        <button type="submit" className="btn btn-primary mt-3">{editingCoupon ? 'שמור שינויים' : 'צור קופון'}</button>
+                        {editingCoupon && <button type="button" className="btn btn-secondary mt-3 ms-2" onClick={resetForm}>בטל</button>}
+                    </form>
                 </div>
             </div>
-        </div>
+
+            {/* Table of existing coupons */}
+            <h5>קופונים קיימים</h5>
+            {isLoading ? <p role="status" aria-live="polite">טוען...</p> : (
+                <table className="table">
+                    <thead>
+                        <tr>
+                            <th scope="col">קוד</th>
+                            <th scope="col">הנחה</th>
+                            <th scope="col">בתוקף עד</th>
+                            <th scope="col">פעיל</th>
+                            <th scope="col">פעולות</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {coupons.map(coupon => (
+                            <tr key={coupon.id}>
+                                <td>{coupon.code}</td>
+                                <td>{coupon.percentageOff}%</td>
+                                <td>{coupon.expiresAt.toDate().toLocaleDateString('he-IL')}</td>
+                                <td>
+                                    <div className="form-check form-switch d-flex justify-content-right">
+                                        <label htmlFor={`coupon-active-${coupon.id}`} className="visually-hidden">
+                                            {coupon.isActive ? `Deactivate` : `Activate`} coupon {coupon.code}
+                                        </label>
+                                        <input
+                                            id={`coupon-active-${coupon.id}`}
+                                            className="form-check-input"
+                                            type="checkbox"
+                                            checked={coupon.isActive}
+                                            onChange={() => handleToggleActive(coupon)}
+                                        />
+                                    </div>
+                                </td>
+                                <td>
+                                    <button className="btn btn-sm btn-secondary me-1" onClick={() => handleEditClick(coupon)}>ערוך</button>
+                                    <button className="btn btn-sm btn-danger" onClick={() => handleDeleteCoupon(coupon.id)}>מחק</button>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            )}
+        </CustomModal>
     );
 };
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Product } from '../types/Product';
-import './CustomModal.css'; // Using existing modal styles
+import CustomModal from './CustomModal'; // Use the accessible custom modal
 
 interface SaleModalProps {
     product: Product | null;
@@ -37,36 +37,33 @@ const SaleModal: React.FC<SaleModalProps> = ({ product, onClose, onSave }) => {
     };
 
     return (
-        <div className="modal-backdrop">
-            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-                <h2>הנחה על {product.name}</h2>
-                <div className="form-group">
-                    <label htmlFor="sale-percentage">אחוז הנחה (%)</label>
-                    <input
-                        type="number"
-                        id="sale-percentage"
-                        className="form-control"
-                        value={percentage}
-                        onChange={(e) => setPercentage(Number(e.target.value))}
-                        min="0"
-                        max="100"
-                    />
-                </div>
-                <div>
-                    <p>מחיר לפני הנחה: ₪{originalPrice.toFixed(2)}</p>
-                    <p>
-                        <strong>מחיר אחרי הנחה: ₪{salePrice.toFixed(2)}</strong>
-                    </p>
-                </div>
-                <div className="modal-actions">
-                    <button className="btn btn-primary" onClick={handleSave}>שמור</button>
-                    {product.isOnSale && (
-                        <button className="btn btn-danger" onClick={handleRemoveSale}>הסר הנחה</button>
-                    )}
-                    <button className="btn btn-secondary" onClick={onClose}>בטל</button>
-                </div>
+        <CustomModal show={!!product} onHide={onClose} title={`הנחה על ${product.name}`}>
+            <div className="form-group">
+                <label htmlFor="sale-percentage">אחוז הנחה (%)</label>
+                <input
+                    type="number"
+                    id="sale-percentage"
+                    className="form-control"
+                    value={percentage}
+                    onChange={(e) => setPercentage(Number(e.target.value))}
+                    min="0"
+                    max="100"
+                />
             </div>
-        </div>
+            <div>
+                <p>מחיר לפני הנחה: ₪{originalPrice.toFixed(2)}</p>
+                <p>
+                    <strong>מחיר אחרי הנחה: ₪{salePrice.toFixed(2)}</strong>
+                </p>
+            </div>
+            <div className="modal-actions">
+                <button className="btn btn-primary" onClick={handleSave}>שמור</button>
+                {product.isOnSale && (
+                    <button className="btn btn-danger" onClick={handleRemoveSale}>הסר הנחה</button>
+                )}
+                <button className="btn btn-secondary" onClick={onClose}>בטל</button>
+            </div>
+        </CustomModal>
     );
 };
 

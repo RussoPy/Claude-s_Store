@@ -68,9 +68,9 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onProductAdd, onProd
             {!isAdmin && (
                 itemInCart ? (
                     <div className="quantity-control" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <button className="quantity-btn" style={{ fontSize: '0.9em', width: 28, height: 28, minWidth: 0, padding: 0 }} onClick={handleRemoveFromCart} disabled={disabled}>-</button>
-                        <span style={{ minWidth: 24, textAlign: 'center', display: 'inline-block' }}>{itemInCart.quantity}</span>
-                        <button className="quantity-btn" style={{ fontSize: '0.9em', width: 28, height: 28, minWidth: 0, padding: 0 }} onClick={() => { addToCart(product); if (onProductAdd) onProductAdd(); }} disabled={disabled}>+</button>
+                        <button className="quantity-btn" style={{ fontSize: '0.9em', width: 28, height: 28, minWidth: 0, padding: 0 }} onClick={handleRemoveFromCart} disabled={disabled} aria-label={`הפחת כמות של ${product.name}`}>-</button>
+                        <span style={{ minWidth: 24, textAlign: 'center', display: 'inline-block' }} aria-live="polite">{itemInCart.quantity}</span>
+                        <button className="quantity-btn" style={{ fontSize: '0.9em', width: 28, height: 28, minWidth: 0, padding: 0 }} onClick={() => { addToCart(product); if (onProductAdd) onProductAdd(); }} disabled={disabled} aria-label={`הוסף עוד ${product.name}`}>+</button>
                     </div>
                 ) : (
                     <button onClick={handleAddToCart} disabled={disabled}>הוסף לעגלה</button>

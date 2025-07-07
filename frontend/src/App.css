@@ -27,7 +27,8 @@ a {
 
 button {
   font-family: 'Helvetica Neue', sans-serif;
-  background-color: #1a9da1;
+  background-color: #0e7c80;
+  /* Changed from #1a9da1 for better contrast */
   /* A vibrant, friendly color */
   color: #fff;
   border: none;
@@ -41,6 +42,15 @@ button {
 
 button:hover {
   background-color: #3378a5;
+}
+
+button:focus,
+a:focus,
+input:focus,
+textarea:focus,
+select:focus {
+  outline: 2px solid #005f73;
+  outline-offset: 2px;
 }
 
 /* Header */
@@ -117,11 +127,13 @@ header nav a {
 
 .product-card h3 {
   margin: 20px 0 10px;
-  font-size: 20px;
+  font-size: 1.25rem;
+  /* Changed from 20px to a relative unit for scaling */
 }
 
 .product-card p {
-  color: #666;
+  color: #333;
+  /* Changed from #666 for better contrast */
   font-size: 22px;
   font-weight: bold;
   margin-bottom: 20px;
@@ -208,7 +220,8 @@ header nav a {
 .remove-item-btn {
   background: none;
   border: none;
-  color: #f44336;
+  color: #c00;
+  /* Changed from #f44336 for better contrast */
   font-weight: bold;
   cursor: pointer;
   padding: 8px;
@@ -485,7 +498,8 @@ footer {
 .remove-item-btn {
   background: none;
   border: none;
-  color: #f44336;
+  color: #c00;
+  /* Changed from #f44336 for better contrast */
   font-weight: bold;
   cursor: pointer;
   padding: 8px;
@@ -620,4 +634,50 @@ footer {
     flex-direction: column;
     gap: 15px;
   }
+}
+
+/* Accessibility Adjustments */
+.high-contrast {
+  background-color: #000 !important;
+  color: #fff !important;
+}
+
+.high-contrast body,
+.high-contrast div,
+.high-contrast header,
+.high-contrast footer,
+.high-contrast main,
+.high-contrast section,
+.high-contrast nav,
+.high-contrast article,
+.high-contrast aside {
+  background: #000 !important;
+  color: #fff !important;
+}
+
+.high-contrast button {
+  background: #fff !important;
+  color: #000 !important;
+  border: 2px solid #000;
+}
+
+.high-contrast a,
+.high-contrast p,
+.high-contrast span,
+.high-contrast h1,
+.high-contrast h2,
+.high-contrast h3,
+.high-contrast h4,
+.high-contrast h5,
+.high-contrast h6 {
+  color: #fff !important;
+}
+
+.high-contrast .product-card {
+  background: #111 !important;
+  border: 1px solid #fff;
+}
+
+.underline-links a {
+  text-decoration: underline !important;
 }

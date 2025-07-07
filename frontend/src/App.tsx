@@ -9,11 +9,14 @@ import AdminLoginPage from './pages/AdminLoginPage';
 import ThankYouPage from './pages/ThankYouPage';
 import { CartProvider } from './context/CartContext';
 import FloatingCartButton from './components/FloatingCartButton';
-import './App.css';
+import CouponModal from './components/CouponModal';
+import { signOut, onAuthStateChanged } from 'firebase/auth';
 import { auth, db } from './firebase';
-import { onAuthStateChanged, User } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
+import { AccessibilityProvider, useAccessibility } from './context/AccessibilityContext';
+import { AccessibilityMenu } from './components/AccessibilityMenu';
 import ScrollToTop from './components/ScrollToTop';
+import './App.css';
 
 const ProductAddedIndicator = ({ show, type }: { show: boolean, type: 'add' | 'remove' }) => (
   show ? (
@@ -34,11 +37,31 @@ const ProductAddedIndicator = ({ show, type }: { show: boolean, type: 'add' | 'r
   ) : null
 );
 
+const AppContent = () => {
+  const { settings } = useAccessibility();
+  const classNames = [
+    settings.highContrast ? 'high-contrast' : '',
+    settings.underlineLinks ? 'underline-links' : ''
+  ].filter(Boolean).join(' ');
+
+  return (
+    <div
+      className={classNames}
+      style={{ fontSize: `${settings.fontSizeMultiplier}rem` }}
+    >
+      {/* The rest of your app */}
+    </div>
+  );
+}
+
 function App() {
+  const [cartKey, setCartKey] = useState(0);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [showCouponModal, setShowCouponModal] = useState(false);
   const [showIndicator, setShowIndicator] = useState(false);
   const [indicatorType, setIndicatorType] = useState<'add' | 'remove'>('add');
-  const [isAdmin, setIsAdmin] = useState<boolean>(false);
-  const [authLoading, setAuthLoading] = useState(true);
+
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -51,9 +74,17 @@ function App() {
       }
       setAuthLoading(false);
     });
-
     return () => unsubscribe();
   }, []);
+
+
+  const handleProductAdd = () => {
+    setCartKey(prevKey => prevKey + 1);
+  };
+
+  const handleLogout = () => {
+    signOut(auth);
+  };
 
   // Provide a function to trigger the indicator
   const triggerIndicator = (type: 'add' | 'remove') => {
@@ -63,25 +94,72 @@ function App() {
   };
 
   return (
-    <CartProvider>
-      <Router>
-        <ScrollToTop />
-        <ProductAddedIndicator show={showIndicator} type={indicatorType} />
-        <Header />
-        <main>
-          <Routes>
-            <Route path="/" element={<HomePage onProductAdd={() => triggerIndicator('add')} onProductRemove={() => triggerIndicator('remove')} isAdmin={isAdmin} authLoading={authLoading} />} />
-            <Route path="/cart" element={<CartPage />} />
-            <Route path="/checkout" element={<CheckoutPage />} />
-            <Route path="/thankyou" element={<ThankYouPage />} />
-            <Route path="/admin/login" element={<AdminLoginPage />} />
-          </Routes>
-        </main>
-        <Footer />
-        {!isAdmin && <FloatingCartButton />}
-      </Router>
-    </CartProvider>
+    <AccessibilityProvider>
+      <AppWrapper />
+    </AccessibilityProvider>
   );
 }
+
+function AppWrapper() {
+  const { settings } = useAccessibility();
+  const [cartKey, setCartKey] = useState(0);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [showCouponModal, setShowCouponModal] = useState(false);
+  const [showIndicator, setShowIndicator] = useState(false);
+  const [indicatorType, setIndicatorType] = useState<'add' | 'remove'>('add');
+
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        const adminDocRef = doc(db, 'admins', user.uid);
+        const adminDoc = await getDoc(adminDocRef);
+        setIsAdmin(adminDoc.exists());
+      } else {
+        setIsAdmin(false);
+      }
+      setAuthLoading(false);
+    });
+    return () => unsubscribe();
+  }, []);
+
+
+  const handleLogout = () => {
+    signOut(auth);
+  };
+
+  const classNames = [
+    settings.highContrast ? 'high-contrast' : '',
+    settings.underlineLinks ? 'underline-links' : ''
+  ].filter(Boolean).join(' ');
+
+  return (
+    <div className={classNames} style={{ fontSize: `${settings.fontSizeMultiplier}rem` }}>
+      <CartProvider>
+        <Router>
+          <ScrollToTop />
+          <Header />
+          <main>
+            <Routes>
+              <Route path="/" element={<HomePage isAdmin={isAdmin} authLoading={authLoading} />} />
+              <Route path="/cart" element={<CartPage />} />
+              <Route path="/checkout" element={<CheckoutPage />} />
+              <Route path="/admin/login" element={<AdminLoginPage />} />
+              <Route path="/thankyou" element={<ThankYouPage />} />
+              {/* More routes can be added here */}
+            </Routes>
+          </main>
+          <FloatingCartButton />
+          {isAdmin && <button onClick={() => setShowCouponModal(true)}>נהל קופונים</button>}
+          <CouponModal show={showCouponModal} onHide={() => setShowCouponModal(false)} />
+          {isAdmin && <button onClick={handleLogout}>התנתק</button>}
+          <AccessibilityMenu />
+        </Router>
+      </CartProvider>
+    </div>
+  );
+}
+
 
 export default App;

@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import ReactModal from 'react-modal';
 import './CustomModal.css';
 
 interface CustomModalProps {
@@ -8,23 +9,29 @@ interface CustomModalProps {
     children: React.ReactNode;
 }
 
-const CustomModal: React.FC<CustomModalProps> = ({ show, onHide, title, children }) => {
-    if (!show) {
-        return null;
-    }
+// Bind modal to your appElement
+if (process.env.NODE_ENV !== 'test') {
+    ReactModal.setAppElement('#root');
+}
 
+
+const CustomModal: React.FC<CustomModalProps> = ({ show, onHide, title, children }) => {
     return (
-        <div className="modal-backdrop" onClick={onHide}>
-            <div className="modal-content" onClick={e => e.stopPropagation()}>
-                <div className="modal-header">
-                    <h5 className="modal-title">{title}</h5>
-                    <button type="button" className="btn-close" onClick={onHide}></button>
-                </div>
-                <div className="modal-body">
-                    {children}
-                </div>
+        <ReactModal
+            isOpen={show}
+            onRequestClose={onHide}
+            className="modal-content"
+            overlayClassName="modal-backdrop"
+            contentLabel={title} // This is important for accessibility
+        >
+            <div className="modal-header">
+                <h5 className="modal-title" id="modal-title-id">{title}</h5>
+                <button type="button" className="btn-close" onClick={onHide} aria-label="Close"></button>
             </div>
-        </div>
+            <div className="modal-body">
+                {children}
+            </div>
+        </ReactModal>
     );
 };
 

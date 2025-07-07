@@ -1,11 +1,31 @@
 /* Import Google Fonts */
 @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@400;700&family=M+PLUS+Rounded+1c:wght@400;700&display=swap');
 
-body, button, input, textarea, select, a, p, span, div, li, ul, ol, table, th, td, label {
+body,
+button,
+input,
+textarea,
+select,
+a,
+p,
+span,
+div,
+li,
+ul,
+ol,
+table,
+th,
+td,
+label {
   font-family: 'M PLUS Rounded 1c', Arial, sans-serif;
 }
 
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   font-family: 'Heebo', 'M PLUS Rounded 1c', Arial, sans-serif;
 }
 
@@ -22,7 +42,7 @@ html[dir="rtl"] body {
   font-weight: 900;
   color: #1a9da1;
   letter-spacing: 2px;
-  text-shadow: 0 4px 18px rgba(26,157,161,0.10), 0 1.5px 6px rgba(0,0,0,0.08);
+  text-shadow: 0 4px 18px rgba(26, 157, 161, 0.10), 0 1.5px 6px rgba(0, 0, 0, 0.08);
   margin: 36px 0 18px 0;
   background: linear-gradient(90deg, #1a9da1 0%, #0e5a5e 100%);
   -webkit-background-clip: text;
@@ -32,4 +52,12 @@ html[dir="rtl"] body {
   display: block;
   padding-bottom: 8px;
   text-align: center;
+}
+
+@media screen and (-ms-high-contrast: active) {
+  .menu-title {
+    background: none;
+    -webkit-text-fill-color: initial;
+    color: initial;
+  }
 }

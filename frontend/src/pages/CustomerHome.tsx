@@ -122,7 +122,7 @@ const CustomerHome: React.FC<CustomerHomeProps> = ({ onProductAdd, onProductRemo
                     <div className="carousel-inner" style={{ width: '100%', height: '100%' }}>
                         {heroImages.map((img, idx) => (
                             <div className={`carousel-item${idx === 0 ? ' active' : ''}`} key={img} style={{ width: '100%', height: '100%' }}>
-                                <img src={img} className="d-block w-100" alt={`hero-${idx}`} style={{ height: 450, objectFit: 'cover', opacity: 0.85 }} />
+                                <img src={img} className="d-block w-100" alt={idx === 0 ? "מאפים טריים במעדניה" : "מבחר גבינות ויין"} style={{ height: 450, objectFit: 'cover', opacity: 0.85 }} />
                             </div>
                         ))}
                     </div>
@@ -168,8 +168,10 @@ const CustomerHome: React.FC<CustomerHomeProps> = ({ onProductAdd, onProductRemo
                         </button>
                     ))}
                 </div>
-                {loading && <p>טוען מוצרים...</p>}
-                {error && <p style={{ color: 'red' }}>{error}</p>}
+                <div role="status" aria-live="polite">
+                    {loading && <p>טוען מוצרים...</p>}
+                    {error && <p style={{ color: 'red' }}>{error}</p>}
+                </div>
                 <div className="product-list">
                     {products.map(product => (
                         <ProductCard

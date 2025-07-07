@@ -95,44 +95,44 @@ const ProductForm: React.FC<ProductFormProps> = ({ onSave, product, categories, 
     };
 
     return (
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} aria-describedby="form-error">
             <div className="mb-3">
-                <label className="form-label">שם המוצר</label>
-                <input type="text" className="form-control" name="name" value={formData.name} onChange={handleChange} required />
+                <label htmlFor="product-name" className="form-label">שם המוצר</label>
+                <input id="product-name" type="text" className="form-control" name="name" value={formData.name} onChange={handleChange} required />
             </div>
             <div className="mb-3">
-                <label className="form-label">תיאור</label>
-                <textarea className="form-control" rows={3} name="description" value={formData.description} onChange={handleChange} required />
+                <label htmlFor="product-description" className="form-label">תיאור</label>
+                <textarea id="product-description" className="form-control" rows={3} name="description" value={formData.description} onChange={handleChange} required />
             </div>
             <div className="row">
                 <div className="col">
                     <div className="mb-3">
-                        <label className="form-label">מחיר</label>
-                        <input type="number" className="form-control" name="price" value={formData.price} onChange={handleChange} required />
+                        <label htmlFor="product-price" className="form-label">מחיר</label>
+                        <input id="product-price" type="number" className="form-control" name="price" value={formData.price} onChange={handleChange} required />
                     </div>
                 </div>
                 <div className="col">
                     <div className="mb-3">
-                        <label className="form-label">כמות</label>
-                        <input type="number" className="form-control" name="quantity" value={formData.quantity} onChange={handleChange} required />
+                        <label htmlFor="product-quantity" className="form-label">כמות</label>
+                        <input id="product-quantity" type="number" className="form-control" name="quantity" value={formData.quantity} onChange={handleChange} required />
                     </div>
                 </div>
             </div>
             <div className="mb-3">
-                <label className="form-label">תמונה</label>
-                <input type="file" className="form-control" onChange={handleFileChange} accept="image/*" />
-                {product?.image && !imageFile && <img src={product.image} alt="current" style={{ maxWidth: '100px', marginTop: '10px' }} />}
+                <label htmlFor="product-image" className="form-label">תמונה</label>
+                <input id="product-image" type="file" className="form-control" onChange={handleFileChange} accept="image/*" />
+                {product?.image && !imageFile && <img src={product.image} alt={`תמונה נוכחית של ${product.name}`} style={{ maxWidth: '100px', marginTop: '10px' }} />}
             </div>
             <div className="mb-3">
-                <label className="form-label">קטגוריה</label>
-                <select className="form-select" name="categoryId" value={formData.categoryId} onChange={handleChange} required>
+                <label htmlFor="product-category" className="form-label">קטגוריה</label>
+                <select id="product-category" className="form-select" name="categoryId" value={formData.categoryId} onChange={handleChange} required>
                     <option value="">בחר קטגוריה</option>
                     {categories.map(cat => (
                         <option key={cat.id} value={cat.id}>{cat.name}</option>
                     ))}
                 </select>
             </div>
-            {error && <p className="text-danger">{error}</p>}
+            {error && <p id="form-error" className="text-danger" role="alert">{error}</p>}
             <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
                 {isSubmitting ? 'שומר...' : 'שמור שינויים'}
             </button>

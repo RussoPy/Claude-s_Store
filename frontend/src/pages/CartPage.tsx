@@ -35,13 +35,13 @@ const CartPage: React.FC = () => {
                                     <h3>{item.name}</h3>
                                     <p>₪{item.price.toFixed(2)}</p>
                                     <div className="quantity-controls">
-                                        <button onClick={() => decrementFromCart(item.id)}>-</button>
-                                        <span>{item.quantity}</span>
-                                        <button onClick={() => addToCart(item)}>+</button>
+                                        <button onClick={() => decrementFromCart(item.id)} aria-label={`הפחת כמות של ${item.name}`}>-</button>
+                                        <span aria-live="polite">{item.quantity}</span>
+                                        <button onClick={() => addToCart(item as Product)} aria-label={`הוסף עוד ${item.name}`}>+</button>
                                     </div>
                                     <p className="item-total-price">סה"כ: ₪{(item.price * item.quantity).toFixed(2)}</p>
                                 </div>
-                                <button className="remove-item-btn" onClick={() => removeFromCart(item.id)}>הסר</button>
+                                <button className="remove-item-btn" onClick={() => removeFromCart(item.id)} aria-label={`הסר את ${item.name} מהעגלה`}>הסר</button>
                             </div>
                         ))}
                     </div>
