@@ -11,7 +11,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import '../AdminHome.css';
 import ProductForm from '../components/ProductForm';
 
-const EditableField = ({ value, onSave, label }: { value: string | number, onSave: (newValue: string | number) => void, label: string }) => {
+const EditableField = ({ value, onSave }: { value: string | number, onSave: (newValue: string | number) => void }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [currentValue, setCurrentValue] = useState(value);
 
@@ -31,16 +31,15 @@ const EditableField = ({ value, onSave, label }: { value: string | number, onSav
                 onBlur={handleSave}
                 onKeyDown={(e) => e.key === 'Enter' && handleSave()}
                 autoFocus
-                aria-label={label}
                 style={{ width: '100%' }}
             />
         );
     }
 
     return (
-        <button onClick={() => setIsEditing(true)} className="editable-field-button" aria-label={`Edit ${label}`}>
+        <span onClick={() => setIsEditing(true)} style={{ cursor: 'pointer', display: 'inline-block', minWidth: '50px' }}>
             {value}
-        </button>
+        </span>
     );
 };
 
@@ -132,7 +131,6 @@ const AdminHome: React.FC = () => {
     }, [selectedCategory, allProducts, categories]);
 
     const handleDeleteProduct = async (productId: string) => {
-        // TODO: Replace with an accessible confirmation modal
         if (window.confirm('Are you sure you want to hide this product?')) {
             const productRef = doc(db, 'products', productId);
             await updateDoc(productRef, { isActive: false });
@@ -151,7 +149,6 @@ const AdminHome: React.FC = () => {
     };
 
     const handleAddCategory = async () => {
-        // TODO: Replace with an accessible prompt/form modal
         const categoryName = prompt("Enter the new category name:");
         if (categoryName) {
             if (categories.some(cat => cat.name.toLowerCase() === categoryName.toLowerCase() && cat.isActive)) {
@@ -169,20 +166,19 @@ const AdminHome: React.FC = () => {
     };
 
     const handleHideCategory = async (categoryId: string) => {
-        // TODO: Replace with an accessible confirmation modal
-        if (window.confirm(`Are you sure you want to hide this category?`)) {
-            const categoryRef = doc(db, 'categories', categoryId);
-            await updateDoc(categoryRef, { isActive: false });
-            if (selectedCategory === categoryId) {
-                setSelectedCategory(null);
-            }
-            fetchProducts();
+        const categoryRef = doc(db, 'categories', categoryId);
+        await updateDoc(categoryRef, { isActive: false });
+        if (selectedCategory === categoryId) {
+            setSelectedCategory(null);
         }
+        fetchProducts();
     };
 
     const handleCategoryContextMenu = (e: React.MouseEvent, categoryId: string) => {
         e.preventDefault();
-        handleHideCategory(categoryId);
+        if (window.confirm(`Are you sure you want to hide this category?`)) {
+            handleHideCategory(categoryId);
+        }
     };
 
     const handleRestoreCategory = async (categoryId: string) => {
@@ -266,76 +262,167 @@ const AdminHome: React.FC = () => {
     const inactiveProducts = allProducts.filter(p => !p.isActive);
 
     return (
-        <div>
-            <h1>ניהול חנות</h1>
-            <button onClick={handleLogout}>התנתק</button>
-            <button onClick={handleAddProduct}>+ הוסף מוצר</button>
-            <button onClick={handleAddCategory}>+ הוסף קטגוריה</button>
-            <button onClick={() => setShowCouponModal(true)}>נהל קופונים</button>
-            <button onClick={() => setShowTrash(!showTrash)}>{showTrash ? "הצג מוצרים פעילים" : "הצג אשפה"}</button>
-
-            <CustomModal show={showModal} onHide={() => setShowModal(false)} title={editingProduct ? 'ערוך מוצר' : 'הוסף מוצר חדש'}>
-                <ProductForm
-                    onSave={handleSave}
-                    product={editingProduct}
-                    categories={categories.filter(c => c.isActive)}
-                    allProducts={allProducts}
-                />
-            </CustomModal>
-
-            <SaleModal product={saleProduct} onClose={handleCloseSaleModal} onSave={handleSaveSale} />
-            <CouponModal show={showCouponModal} onHide={() => setShowCouponModal(false)} />
-
-            <div className="admin-controls">
-                {/* Category filters etc */}
+        <>
+            <div className="alert alert-info" style={{ borderRadius: 0, textAlign: 'center', position: 'sticky', top: 0, zIndex: 1021, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '20px' }}>
+                <strong>מצב ניהול</strong> | אתה במצב עריכה.
+                <button className="btn btn-sm btn-outline-secondary" onClick={handleLogout}>התנתק</button>
             </div>
+            <div className="admin-home-container">
+                <div className="product-list-container" ref={productsRef} style={{ padding: '20px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                        <h1>ניהול מוצרים</h1>
+                        <div className="admin-actions" style={{ display: 'flex', gap: '10px' }}>
+                            <button className="btn btn-info" onClick={() => setShowTrash(true)}>הצג פריטים שנמחקו</button>
+                            <button className="btn btn-success" onClick={() => setShowCouponModal(true)}>נהל קופונים</button>
+                            <button className="btn btn-primary" onClick={handleAddProduct}>הוסף מוצר</button>
+                            <button className="btn btn-secondary" onClick={handleAddCategory}>הוסף קטגוריה</button>
+                        </div>
+                    </div>
+                    <div className="category-bar" style={{ display: 'flex', gap: 12, justifyContent: 'center', margin: '24px 0', flexWrap: 'wrap' }}>
+                        <button
+                            className={`category-btn${selectedCategory === null ? ' selected' : ''}`}
+                            style={{ background: selectedCategory === null ? '#1a9da1' : '#fff', color: selectedCategory === null ? '#fff' : '#1a9da1', border: '2px solid #1a9da1', borderRadius: 20, padding: '8px 24px', fontWeight: 700, fontSize: 18, cursor: 'pointer', transition: 'all 0.2s' }}
+                            onClick={() => setSelectedCategory(null)}
+                        >
+                            הכל
+                        </button>
+                        {!catLoading && activeCategories.map(cat => (
+                            <button
+                                key={cat.id}
+                                className={`category-btn${selectedCategory === cat.id ? ' selected' : ''}`}
+                                onContextMenu={(e) => handleCategoryContextMenu(e, cat.id)}
+                                style={{ background: selectedCategory === cat.id ? '#1a9da1' : '#fff', color: selectedCategory === cat.id ? '#fff' : '#1a9da1', border: '2px solid #1a9da1', borderRadius: 20, padding: '8px 24px', fontWeight: 700, fontSize: 18, cursor: 'pointer', transition: 'all 0.2s' }}
+                                onClick={() => setSelectedCategory(cat.id)}
+                            >
+                                {cat.name}
+                            </button>
+                        ))}
+                    </div>
 
-            <div role="status" aria-live="polite">
-                {loading && <p>טוען...</p>}
-                {error && <p className="text-danger">{error}</p>}
+                    <div className="table-responsive">
+                        <table className="table table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th>תמונה</th>
+                                    <th>שם</th>
+                                    <th>תיאור</th>
+                                    <th>מחיר</th>
+                                    <th>זמינות</th>
+                                    <th>מבצע</th>
+                                    <th>פעולות</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {products.map((p) => (
+                                    <tr key={p.id}>
+                                        <td>
+                                            <img
+                                                src={p.image || "https://via.placeholder.com/60"}
+                                                alt={p.name}
+                                                style={{ width: '60px', height: '60px', cursor: 'pointer', objectFit: 'cover', borderRadius: '4px' }}
+                                                onClick={() => handleImageUploadClick(p.id)}
+                                            />
+                                        </td>
+                                        <td><EditableField value={p.name} onSave={(val) => handleFieldUpdate(p.id, 'name', val as string)} /></td>
+                                        <td><EditableField value={p.description} onSave={(val) => handleFieldUpdate(p.id, 'description', val as string)} /></td>
+                                        <td><EditableField value={p.price} onSave={(val) => handleFieldUpdate(p.id, 'price', val as number)} /></td>
+                                        <td>
+                                            <div className="form-check form-switch d-flex justify-content-center">
+                                                <input
+                                                    className="form-check-input"
+                                                    type="checkbox"
+                                                    role="switch"
+                                                    checked={p.isAvailable}
+                                                    onChange={(e) => handleFieldUpdate(p.id, 'isAvailable', e.target.checked)}
+                                                />
+                                            </div>
+                                        </td>
+                                        <td>
+                                            {p.isOnSale ? (
+                                                <span className="badge bg-success">{p.salePercentage}% OFF</span>
+                                            ) : (
+                                                <span className="badge bg-secondary">אין מבצע</span>
+                                            )}
+                                        </td>
+                                        <td>
+                                            <button className="btn btn-sm btn-info me-2" onClick={() => handleOpenSaleModal(p)}>ערוך מבצע</button>
+                                            <button className="btn btn-sm btn-outline-danger" onClick={() => handleDeleteProduct(p.id)}>מחק</button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                {showModal && (
+                    <CustomModal show={showModal} onHide={() => setShowModal(false)} title={editingProduct ? "Edit Product" : "Add Product"}>
+                        <ProductForm
+                            onSave={handleSave}
+                            product={editingProduct}
+                            categories={activeCategories}
+                            allProducts={allProducts}
+                        />
+                    </CustomModal>
+                )}
+                {showSaleModal && (
+                    <SaleModal
+                        product={saleProduct}
+                        onClose={handleCloseSaleModal}
+                        onSave={handleSaveSale}
+                    />
+                )}
+                {showCouponModal && (
+                    <CouponModal show={showCouponModal} onHide={() => setShowCouponModal(false)} />
+                )}
+                <CustomModal
+                    show={showTrash}
+                    onHide={() => setShowTrash(false)}
+                    title="פריטים שנמחקו"
+                >
+                    <div className="trash-section">
+                        <h5>מוצרים</h5>
+                        <table className="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>שם</th>
+                                    <th>פעולות</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {inactiveProducts.map(p => (
+                                    <tr key={p.id}>
+                                        <td>{p.name}</td>
+                                        <td>
+                                            <button className="btn btn-sm btn-outline-success" onClick={() => handleRestoreProduct(p.id)}>שחזר</button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div className="trash-section">
+                        <h5>קטגוריות</h5>
+                        <table className="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>שם</th>
+                                    <th>פעולות</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {inactiveCategories.map(c => (
+                                    <tr key={c.id}>
+                                        <td>{c.name} (קטגוריה)</td>
+                                        <td>
+                                            <button className="btn btn-sm btn-outline-success" onClick={() => handleRestoreCategory(c.id)}>שחזר</button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </CustomModal>
             </div>
-
-            <table className="table admin-product-table">
-                <thead>
-                    <tr>
-                        <th scope="col">תמונה</th>
-                        <th scope="col">שם</th>
-                        <th scope="col">תיאור</th>
-                        <th scope="col">מחיר</th>
-                        <th scope="col">כמות</th>
-                        <th scope="col">פעולות</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {products.map(product => (
-                        <tr key={product.id}>
-                            <td>
-                                <div className="product-image-container">
-                                    <img src={product.image} alt={product.name} className="product-image-thumb" />
-                                    <button
-                                        className="edit-image-btn"
-                                        onClick={() => handleImageUploadClick(product.id)}
-                                        aria-label={`Change image for ${product.name}`}
-                                    >
-                                        ✏️
-                                    </button>
-                                </div>
-                            </td>
-                            <td><EditableField value={product.name} onSave={(val) => handleFieldUpdate(product.id, 'name', val)} label="שם מוצר" /></td>
-                            <td><EditableField value={product.description} onSave={(val) => handleFieldUpdate(product.id, 'description', val)} label="תיאור מוצר" /></td>
-                            <td><EditableField value={product.price} onSave={(val) => handleFieldUpdate(product.id, 'price', val)} label="מחיר" /></td>
-                            <td><EditableField value={product.quantity ?? 0} onSave={(val) => handleFieldUpdate(product.id, 'quantity', val)} label="כמות" /></td>
-                            <td>
-                                <button onClick={() => { setEditingProduct(product); setShowModal(true); }}>ערוך</button>
-                                <button onClick={() => handleDeleteProduct(product.id)}>מחק</button>
-                                <button onClick={() => handleOpenSaleModal(product)}>הנחה</button>
-                            </td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
-
-            {/* Hidden file input */}
             <input
                 type="file"
                 ref={fileInputRef}
@@ -343,7 +430,7 @@ const AdminHome: React.FC = () => {
                 onChange={handleFileChange}
                 accept="image/*"
             />
-        </div>
+        </>
     );
 };
 
