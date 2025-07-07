@@ -12,26 +12,26 @@ export const AccessibilityMenu = () => {
                 ♿
             </button>
             <div className="accessibility-controls" id="accessibility-controls" hidden={!isOpen}>
-                <h3>Accessibility Options</h3>
+                <h3>אפשרויות נגישות</h3>
                 <div className="control-group">
-                    <h4>Text Size</h4>
+                    <h4>גודל טקסט</h4>
                     <div className="text-size-controls">
-                        <button onClick={decreaseFontSize}>A-</button>
-                        <button onClick={resetFontSize}>Reset</button>
-                        <button onClick={increaseFontSize}>A+</button>
+                        <button onClick={decreaseFontSize}>א-</button>
+                        <button onClick={resetFontSize}>איפוס</button>
+                        <button onClick={increaseFontSize}>א+</button>
                     </div>
                 </div>
                 <div className="control-group">
-                    <h4>Display</h4>
+                    <h4>תצוגה</h4>
                     <label>
                         <input type="checkbox" checked={settings.highContrast} onChange={toggleHighContrast} />
-                        High Contrast
+                        ניגודיות גבוהה
                     </label>
                 </div>
                 <div className="control-group">
                     <label>
                         <input type="checkbox" checked={settings.underlineLinks} onChange={toggleUnderlineLinks} />
-                        Underline Links
+                        הדגשת קישורים
                     </label>
                 </div>
             </div>

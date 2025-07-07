@@ -136,3 +136,28 @@
     accent-color: #0e7c80;
     /* Style the checkmark color */
 }
+
+/* High Contrast Styles for the Menu Itself */
+.high-contrast .accessibility-controls {
+    background: #000 !important;
+    border-color: #fff !important;
+    color: #fff !important;
+}
+
+.high-contrast .accessibility-controls h3,
+.high-contrast .accessibility-controls h4 {
+    color: #fff !important;
+    border-color: #fff !important;
+}
+
+.high-contrast .text-size-controls button,
+.high-contrast .control-group label {
+    background: #000 !important;
+    color: #fff !important;
+    border-color: #fff !important;
+}
+
+.high-contrast .text-size-controls button:hover,
+.high-contrast .control-group label:hover {
+    background: #333 !important;
+}
