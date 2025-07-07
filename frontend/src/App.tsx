@@ -7,6 +7,7 @@ import CartPage from './pages/CartPage';
 import CheckoutPage from './pages/CheckoutPage';
 import AdminLoginPage from './pages/AdminLoginPage';
 import ThankYouPage from './pages/ThankYouPage';
+import TermsPage from './pages/TermsPage';
 import { CartProvider } from './context/CartContext';
 import FloatingCartButton from './components/FloatingCartButton';
 import CouponModal from './components/CouponModal';
@@ -37,62 +38,7 @@ const ProductAddedIndicator = ({ show, type }: { show: boolean, type: 'add' | 'r
   ) : null
 );
 
-const AppContent = () => {
-  const { settings } = useAccessibility();
-  const classNames = [
-    settings.highContrast ? 'high-contrast' : '',
-    settings.underlineLinks ? 'underline-links' : ''
-  ].filter(Boolean).join(' ');
-
-  return (
-    <div
-      className={classNames}
-      style={{ fontSize: `${settings.fontSizeMultiplier}rem` }}
-    >
-      {/* The rest of your app */}
-    </div>
-  );
-}
-
 function App() {
-  const [cartKey, setCartKey] = useState(0);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [authLoading, setAuthLoading] = useState(true);
-  const [showCouponModal, setShowCouponModal] = useState(false);
-  const [showIndicator, setShowIndicator] = useState(false);
-  const [indicatorType, setIndicatorType] = useState<'add' | 'remove'>('add');
-
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        const adminDocRef = doc(db, 'admins', user.uid);
-        const adminDoc = await getDoc(adminDocRef);
-        setIsAdmin(adminDoc.exists());
-      } else {
-        setIsAdmin(false);
-      }
-      setAuthLoading(false);
-    });
-    return () => unsubscribe();
-  }, []);
-
-
-  const handleProductAdd = () => {
-    setCartKey(prevKey => prevKey + 1);
-  };
-
-  const handleLogout = () => {
-    signOut(auth);
-  };
-
-  // Provide a function to trigger the indicator
-  const triggerIndicator = (type: 'add' | 'remove') => {
-    setIndicatorType(type);
-    setShowIndicator(true);
-    setTimeout(() => setShowIndicator(false), 1200);
-  };
-
   return (
     <AccessibilityProvider>
       <AppWrapper />
@@ -102,7 +48,6 @@ function App() {
 
 function AppWrapper() {
   const { settings } = useAccessibility();
-  const [cartKey, setCartKey] = useState(0);
   const [isAdmin, setIsAdmin] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
   const [showCouponModal, setShowCouponModal] = useState(false);
@@ -127,6 +72,12 @@ function AppWrapper() {
 
   const handleLogout = () => {
     signOut(auth);
+  };
+
+  const triggerIndicator = (type: 'add' | 'remove') => {
+    setIndicatorType(type);
+    setShowIndicator(true);
+    setTimeout(() => setShowIndicator(false), 1200);
   };
 
   const classNames = [
@@ -139,18 +90,20 @@ function AppWrapper() {
       <CartProvider>
         <Router>
           <ScrollToTop />
+          <ProductAddedIndicator show={showIndicator} type={indicatorType} />
           <Header />
           <main>
             <Routes>
-              <Route path="/" element={<HomePage isAdmin={isAdmin} authLoading={authLoading} />} />
+              <Route path="/" element={<HomePage onProductAdd={() => triggerIndicator('add')} onProductRemove={() => triggerIndicator('remove')} isAdmin={isAdmin} authLoading={authLoading} />} />
               <Route path="/cart" element={<CartPage />} />
               <Route path="/checkout" element={<CheckoutPage />} />
               <Route path="/admin/login" element={<AdminLoginPage />} />
               <Route path="/thankyou" element={<ThankYouPage />} />
-              {/* More routes can be added here */}
+              <Route path="/terms" element={<TermsPage />} />
             </Routes>
           </main>
-          <FloatingCartButton />
+          <Footer />
+          {!isAdmin && <FloatingCartButton />}
           {isAdmin && <button onClick={() => setShowCouponModal(true)}>נהל קופונים</button>}
           <CouponModal show={showCouponModal} onHide={() => setShowCouponModal(false)} />
           {isAdmin && <button onClick={handleLogout}>התנתק</button>}
