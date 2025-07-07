@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import './Footer.css';
 
 const Footer = () => {
@@ -7,7 +8,16 @@ const Footer = () => {
             <div className="footer-content">
                 <div className="footer-section">
                     <h3>המעדניה של קלוד בע"מ</h3>
+                    <p style={{ margin: 0, color: '#fff', fontWeight: 600 }}>זמן הכנת משלוח: 3-4 ימים</p>
                     <p> מסורת של איכות, טריות ושירות מכל הלב.</p>
+                </div>
+                <div className="footer-section">
+                    <h4>קישורים שימושיים</h4>
+                    <ul className="footer-links">
+                        <li><Link to="/terms">תקנון האתר</Link></li>
+                        <li><Link to="/privacy">מדיניות פרטיות</Link></li>
+                        <li><Link to="/accessibility-statement">הצהרת נגישות</Link></li>
+                    </ul>
                 </div>
                 <div className="footer-section">
                     <h4>המפה שלנו</h4>
@@ -32,9 +42,6 @@ const Footer = () => {
                 </div>
             </div>
             <div className="footer-bottom">
-                <button onClick={() => window.location.href = '/terms'} style={{ background: '#1a9da1', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 24px', fontWeight: 600, cursor: 'pointer', marginBottom: 12 }}>
-                    תקנון האתר
-                </button>
                 <p>© {new Date().getFullYear()} המעדיה של קלוד — כל הזכויות שמורות.</p>
             </div>
         </footer>

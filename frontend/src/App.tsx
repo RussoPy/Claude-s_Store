@@ -8,6 +8,8 @@ import CheckoutPage from './pages/CheckoutPage';
 import AdminLoginPage from './pages/AdminLoginPage';
 import ThankYouPage from './pages/ThankYouPage';
 import TermsPage from './pages/TermsPage';
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
+import AccessibilityStatementPage from './pages/AccessibilityStatementPage';
 import { CartProvider } from './context/CartContext';
 import FloatingCartButton from './components/FloatingCartButton';
 import CouponModal from './components/CouponModal';
@@ -100,6 +102,8 @@ function AppWrapper() {
               <Route path="/admin/login" element={<AdminLoginPage />} />
               <Route path="/thankyou" element={<ThankYouPage />} />
               <Route path="/terms" element={<TermsPage />} />
+              <Route path="/privacy" element={<PrivacyPolicyPage />} />
+              <Route path="/accessibility-statement" element={<AccessibilityStatementPage />} />
             </Routes>
           </main>
           <Footer />
