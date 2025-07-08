@@ -16,6 +16,7 @@ frontend/.firebase/
 # Frontend build artifacts and dependencies
 frontend/build/
 frontend/node_modules/
+frontend/package-lock.json
 
 # General cache and log files
 .cache/
