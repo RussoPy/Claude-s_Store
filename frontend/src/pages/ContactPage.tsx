@@ -19,7 +19,7 @@ const ContactPage = () => {
                 <div className="contact-card">
                     <h2><i className="fas fa-envelope"></i> דואר אלקטרוני</h2>
                     <p>ניתן לשלוח לנו מייל לכתובת:</p>
-                    <p><a href="mailto:shmalze.123@gmail.com">Claudedeli@gmail.com</a></p>
+                    <p><a href="mailto:shmalze.123@gmail.com">Contact@claude-deli.com</a></p>
                     <p>אנו משתדלים לענות לכל הפניות תוך 24 שעות.</p>
                 </div>
 

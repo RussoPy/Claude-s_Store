@@ -38,7 +38,7 @@ const Footer = () => {
                 <div className="footer-section">
                     <h4><Link to="/contact" style={{ color: 'inherit', textDecoration: 'none', font: 'inherit' }}>צור קשר</Link></h4>
                     <p>טלפון: <a href="tel:+9720505675681">050-5675681</a></p>
-                    <p>דוא"ל: <a href="mailto:shmalze.123@gmail.com" rel="noopener noreferrer">Claudedeli@gmail.com</a></p>
+                    <p>דוא"ל: <a href="mailto:shmalze.123@gmail.com" rel="noopener noreferrer">contact@claude-deli.com</a></p>
                     <p>כתובת: <a href="https://maps.google.com/?q=רח' הכרמל 5, תל אביב" target="_blank" rel="noopener noreferrer">רח' הכרמל 5, תל אביב</a></p>
                 </div>
             </div>
