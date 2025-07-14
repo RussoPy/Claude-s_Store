@@ -129,24 +129,24 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # CORS_ALLOW_ALL_ORIGINS = True # This is now replaced by the more secure settings below.
 
 # --- CORS Configuration ---
-# A more secure setup that uses environment variables to control allowed origins.
 CORS_ALLOW_ALL_ORIGINS = False
 
+# Define allowed origins based on the DEBUG setting.
 if DEBUG:
-    # In development, we allow the local React app to make requests.
-    local_client_url = os.getenv('LOCALHOST')
-    if not local_client_url:
-        # This provides a clear error if the .env variable is missing during development.
-        raise ValueError("The 'LOCALHOST' environment variable must be set in your .env file for development.")
-    CORS_ALLOWED_ORIGINS = [local_client_url]
+    # For local development, allow requests from common frontend ports.
+    CORS_ALLOWED_ORIGINS = [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost:5173",  # Common for Vite
+        "http://127.0.0.1:5173",
+    ]
 else:
-    # In production (or non-debug), use a placeholder if no frontend exists yet
-    prod_client_url = os.getenv('PRODUCTIONCLIENT', 'http://placeholder.local')
-
-    if prod_client_url == 'http://placeholder.local':
-        print("⚠️ WARNING: Using placeholder PRODUCTIONCLIENT. Set a real domain before production launch.")
-
-    CORS_ALLOWED_ORIGINS = [prod_client_url]
+    # For production, specify the exact domains of your frontend.
+    CORS_ALLOWED_ORIGINS = [
+        "https://claude-s-store.web.app",
+        "https://claude-s-store.firebaseapp.com",
+        "https://claude-deli.com",
+    ]
 
 CORS_ALLOW_CREDENTIALS = True
 
