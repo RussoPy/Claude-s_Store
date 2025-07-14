@@ -42,10 +42,12 @@ const CheckoutPage = () => {
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [shippingMethod, setShippingMethod] = useState('pickup'); // 'pickup' or 'delivery'
   const [shippingCost, setShippingCost] = useState(0);
+  const [isProcessing, setIsProcessing] = useState(false);
   const { getCartTotal, clearCart, cartItems } = cartContext || {};
 
   const SHIPPING_FEE = 20;
-  const FREE_SHIPPING_THRESHOLD = 100;
+  const FREE_SHIPPING_THRESHOLD = 200;
+  const MINIMUM_PURCHASE = 100;
 
   useEffect(() => {
     if (!getCartTotal) return;
@@ -135,7 +137,7 @@ const CheckoutPage = () => {
         {
           amount: {
             currency_code: 'ILS',
-            value: total.toFixed(2),
+            value: finalTotal.toFixed(2),
           },
         },
       ],
@@ -143,6 +145,7 @@ const CheckoutPage = () => {
   };
 
   const onApprove = (data: any, actions: any) => {
+    setIsProcessing(true);
     return actions.order.capture().then(async (details: any) => {
       try {
         const backendUrl = process.env.REACT_APP_BACKEND_URL;
@@ -178,12 +181,14 @@ const CheckoutPage = () => {
             cartContext.clearCart();
           }, 500);
         } else {
+          setIsProcessing(false);
           throw new Error(orderData.message || 'שגיאה בשמירת ההזמנה');
         }
 
       } catch (error) {
         console.error("Error saving order: ", error);
         alert('   אירעה שגיאה בשליחת ההזמנה. אנא צור קשר עם שירות הלקוחות.');
+        setIsProcessing(false);
       }
     });
   };
@@ -194,12 +199,14 @@ const CheckoutPage = () => {
     console.error("Error code:", err?.code);
     console.error("Error details:", err?.details);
     alert(`PayPal Error: ${err?.message || 'אירעה שגיאה במהלך התשלום'}`);
+    setIsProcessing(false);
   }
 
   const onCancel = (data: any) => {
     // This function is called when the user closes the PayPal popup.
     // We log it for debugging purposes but don't show an error to the user.
     console.log("PayPal payment cancelled by user.", data);
+    setIsProcessing(false);
   };
 
   const clientId = process.env.REACT_APP_PAYPAL_CLIENT_ID;
@@ -217,6 +224,28 @@ const CheckoutPage = () => {
 
   return (
     <PayPalScriptProvider options={{ clientId: clientId, currency: "ILS" }}>
+      {isProcessing && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          backgroundColor: 'rgba(255, 255, 255, 0.9)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 9999,
+          flexDirection: 'column',
+          backdropFilter: 'blur(5px)',
+        }}>
+          {/* Assuming a global .loading-spinner class exists for the animation */}
+          <div className="loading-spinner"></div>
+          <p style={{ marginTop: '20px', fontSize: '1.5em', color: '#333', fontWeight: 500 }}>
+            מאמת את התשלום... נא להמתין.
+          </p>
+        </div>
+      )}
       <div className="checkout-page" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minHeight: '80vh' }}>
         <div style={{ width: '100%', maxWidth: '500px', textAlign: 'center' }}>
           <h1>תשלום</h1>
@@ -256,7 +285,7 @@ const CheckoutPage = () => {
                   משלוח עד הבית
                 </label>
               </div>
-              <p style={{ fontSize: '0.9em', color: '#6c757d', marginTop: '5px' }}>משלוח חינם בהזמנה מעל ₪100. זמן אספקה: 3-4 ימי עסקים.</p>
+              <p style={{ fontSize: '0.9em', color: '#6c757d', marginTop: '5px' }}>{`משלוח חינם בהזמנה מעל ₪${FREE_SHIPPING_THRESHOLD}. זמן אספקה: 3-4 ימי עסקים.`}</p>
             </div>
             {shippingMethod === 'delivery' && (
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -284,12 +313,17 @@ const CheckoutPage = () => {
                 קראתי והבנתי את <a href="/terms" target="_blank" rel="noopener noreferrer">תנאי השימוש</a>
               </label>
             </div>
+            {finalTotal < MINIMUM_PURCHASE && finalTotal > 0 && (
+              <p style={{ color: 'red', fontWeight: 'bold', textAlign: 'center' }}>
+                סכום ההזמנה המינימלי הוא ₪{MINIMUM_PURCHASE}.
+              </p>
+            )}
             <PayPalCheckoutButton
               createOrder={createOrder}
               onApprove={onApprove}
               onError={onError}
               onCancel={onCancel}
-              disabled={!termsAccepted}
+              disabled={!termsAccepted || finalTotal < MINIMUM_PURCHASE}
             />
           </div>
         </div>

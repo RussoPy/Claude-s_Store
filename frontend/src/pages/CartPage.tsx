@@ -5,12 +5,16 @@ import { Product } from '../types/Product';
 
 const CartPage: React.FC = () => {
     const cartContext = useContext(CartContext);
+    const MINIMUM_PURCHASE = 100;
 
     if (!cartContext) {
         return <div style={{ textAlign: 'center', padding: '50px' }}>טוען...</div>;
     }
 
     const { cartItems, addToCart, decrementFromCart, removeFromCart, getCartTotal } = cartContext;
+
+    const cartTotal = getCartTotal();
+    const isCheckoutDisabled = cartTotal > 0 && cartTotal < MINIMUM_PURCHASE;
 
     return (
         <div className="cart-page">
@@ -50,10 +54,20 @@ const CartPage: React.FC = () => {
                         <h2>סיכום הזמנה</h2>
                         <div className="summary-total">
                             <span>סה"כ:</span>
-                            <span>₪{getCartTotal().toFixed(2)}</span>
+                            <span>₪{cartTotal.toFixed(2)}</span>
                         </div>
-                        <Link to="/checkout" style={{ textDecoration: 'none' }}>
-                            <button className="checkout-btn">המשך לתשלום</button>
+                        {isCheckoutDisabled && (
+                            <p style={{ color: 'red', marginTop: '10px', fontWeight: 'bold' }}>
+                                קנייה באתר מ-₪{MINIMUM_PURCHASE} ומעלה
+                                <Link to="/">
+                              <p style={{ color: 'blue', marginTop: '10px', fontWeight: 'bold' }}> המשך לקנות</p>
+                            </Link>
+                            </p>
+
+                           
+                        )}
+                        <Link to="/checkout" style={{ textDecoration: 'none', pointerEvents: isCheckoutDisabled ? 'none' : 'auto' }}>
+                            <button className="checkout-btn" disabled={isCheckoutDisabled}>המשך לתשלום</button>
                         </Link>
                     </div>
                 </div>

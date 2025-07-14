@@ -709,3 +709,10 @@ footer {
   background-color: yellow !important;
   color: black !important;
 }
+
+.checkout-btn:disabled {
+  background-color: #cccccc;
+  color: #666666;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
