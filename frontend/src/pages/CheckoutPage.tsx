@@ -188,8 +188,11 @@ const CheckoutPage = () => {
   };
 
   const onError = (err: any) => {
-    console.error("PayPal Checkout onError", err);
-    alert('אירעה שגיאה במהלך התשלום.');
+    console.error("PayPal Checkout onError - Full error details:", err);
+    console.error("Error message:", err?.message);
+    console.error("Error code:", err?.code);
+    console.error("Error details:", err?.details);
+    alert(`PayPal Error: ${err?.message || 'אירעה שגיאה במהלך התשלום'}`);
   }
 
   const onCancel = (data: any) => {
