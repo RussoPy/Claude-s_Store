@@ -316,9 +316,25 @@ def create_order(request):
 
         if coupon_code:
             print(f"Attempting to apply coupon: {coupon_code}")
+            # Get payer email from PayPal details (if available)
+            payer_email = None
+            if 'payer' in paypal_details and 'email_address' in paypal_details['payer']:
+                payer_email = paypal_details['payer']['email_address']
+            elif 'payer' in verified_paypal_order and 'email_address' in verified_paypal_order['payer']:
+                payer_email = verified_paypal_order['payer']['email_address']
+            else:
+                payer_email = None
+
+            if payer_email:
+                # Check if this email has already used this coupon
+                orders_ref = db.collection('orders')
+                prior_orders = orders_ref.where('coupon_used', '==', coupon_code).where('payer_email', '==', payer_email).limit(1).stream()
+                for _ in prior_orders:
+                    print(f"Coupon '{coupon_code}' already used by {payer_email}")
+                    return JsonResponse({'message': 'קופון זה כבר נוצל על ידי כתובת האימייל שלך.'}, status=400)
+
             coupons_ref = db.collection('coupons')
             coupon_query = coupons_ref.where('code', '==', coupon_code).where('isActive', '==', True).limit(1).stream()
-            
             found_coupon = None
             for coupon_doc in coupon_query:
                 found_coupon = coupon_doc.to_dict()
