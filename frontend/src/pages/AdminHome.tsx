@@ -10,6 +10,7 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import '../AdminHome.css';
 import ProductForm from '../components/ProductForm';
+import OrdersView from './OrdersView';
 
 const EditableField = ({ value, onSave }: { value: string | number, onSave: (newValue: string | number) => void }) => {
     const [isEditing, setIsEditing] = useState(false);
@@ -60,6 +61,7 @@ const AdminHome: React.FC = () => {
     const [uploadingProductId, setUploadingProductId] = useState<string | null>(null);
     const [showTrash, setShowTrash] = useState(false);
     const [showCouponModal, setShowCouponModal] = useState(false);
+    const [currentView, setCurrentView] = useState<'products' | 'orders'>('products');
 
     const handleLogout = () => {
         auth.signOut();
@@ -116,8 +118,10 @@ const AdminHome: React.FC = () => {
     }
 
     useEffect(() => {
-        fetchProducts();
-    }, []);
+        if (currentView === 'products') {
+            fetchProducts();
+        }
+    }, [currentView]);
 
     useEffect(() => {
         const activeCategoryIds = new Set(categories.filter(c => c.isActive).map(c => c.id));
@@ -268,91 +272,104 @@ const AdminHome: React.FC = () => {
                 <button className="btn btn-sm btn-outline-secondary" onClick={handleLogout}>התנתק</button>
             </div>
             <div className="admin-home-container">
-                <div className="product-list-container" ref={productsRef} style={{ padding: '20px' }}>
+                <div style={{ padding: '20px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                        <h1>ניהול מוצרים</h1>
+                        <h1>דשבורד ניהול</h1>
                         <div className="admin-actions" style={{ display: 'flex', gap: '10px' }}>
-                            <button className="btn btn-info" onClick={() => setShowTrash(true)}>הצג פריטים שנמחקו</button>
-                            <button className="btn btn-success" onClick={() => setShowCouponModal(true)}>נהל קופונים</button>
-                            <button className="btn btn-primary" onClick={handleAddProduct}>הוסף מוצר</button>
-                            <button className="btn btn-secondary" onClick={handleAddCategory}>הוסף קטגוריה</button>
+                            <button className={`btn ${currentView === 'products' ? 'btn-primary' : 'btn-outline-primary'}`} onClick={() => setCurrentView('products')}>ניהול מוצרים</button>
+                            <button className={`btn ${currentView === 'orders' ? 'btn-primary' : 'btn-outline-primary'}`} onClick={() => setCurrentView('orders')}>ניהול הזמנות</button>
                         </div>
                     </div>
-                    <div className="category-bar" style={{ display: 'flex', gap: 12, justifyContent: 'center', margin: '24px 0', flexWrap: 'wrap' }}>
-                        <button
-                            className={`category-btn${selectedCategory === null ? ' selected' : ''}`}
-                            style={{ background: selectedCategory === null ? '#1a9da1' : '#fff', color: selectedCategory === null ? '#fff' : '#1a9da1', border: '2px solid #1a9da1', borderRadius: 20, padding: '8px 24px', fontWeight: 700, fontSize: 18, cursor: 'pointer', transition: 'all 0.2s' }}
-                            onClick={() => setSelectedCategory(null)}
-                        >
-                            הכל
-                        </button>
-                        {!catLoading && activeCategories.map(cat => (
-                            <button
-                                key={cat.id}
-                                className={`category-btn${selectedCategory === cat.id ? ' selected' : ''}`}
-                                onContextMenu={(e) => handleCategoryContextMenu(e, cat.id)}
-                                style={{ background: selectedCategory === cat.id ? '#1a9da1' : '#fff', color: selectedCategory === cat.id ? '#fff' : '#1a9da1', border: '2px solid #1a9da1', borderRadius: 20, padding: '8px 24px', fontWeight: 700, fontSize: 18, cursor: 'pointer', transition: 'all 0.2s' }}
-                                onClick={() => setSelectedCategory(cat.id)}
-                            >
-                                {cat.name}
-                            </button>
-                        ))}
-                    </div>
 
-                    <div className="table-responsive">
-                        <table className="table table-striped table-hover">
-                            <thead>
-                                <tr>
-                                    <th>תמונה</th>
-                                    <th>שם</th>
-                                    <th>תיאור</th>
-                                    <th>מחיר</th>
-                                    <th>זמינות</th>
-                                    <th>מבצע</th>
-                                    <th>פעולות</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {products.map((p) => (
-                                    <tr key={p.id}>
-                                        <td>
-                                            <img
-                                                src={p.image || "https://via.placeholder.com/60"}
-                                                alt={p.name}
-                                                style={{ width: '60px', height: '60px', cursor: 'pointer', objectFit: 'cover', borderRadius: '4px' }}
-                                                onClick={() => handleImageUploadClick(p.id)}
-                                            />
-                                        </td>
-                                        <td><EditableField value={p.name} onSave={(val) => handleFieldUpdate(p.id, 'name', val as string)} /></td>
-                                        <td><EditableField value={p.description} onSave={(val) => handleFieldUpdate(p.id, 'description', val as string)} /></td>
-                                        <td><EditableField value={p.price} onSave={(val) => handleFieldUpdate(p.id, 'price', val as number)} /></td>
-                                        <td>
-                                            <div className="form-check form-switch d-flex justify-content-center">
-                                                <input
-                                                    className="form-check-input"
-                                                    type="checkbox"
-                                                    role="switch"
-                                                    checked={p.isAvailable}
-                                                    onChange={(e) => handleFieldUpdate(p.id, 'isAvailable', e.target.checked)}
-                                                />
-                                            </div>
-                                        </td>
-                                        <td>
-                                            {p.isOnSale ? (
-                                                <span className="badge bg-success">{p.salePercentage}% OFF</span>
-                                            ) : (
-                                                <span className="badge bg-secondary">אין מבצע</span>
-                                            )}
-                                        </td>
-                                        <td>
-                                            <button className="btn btn-sm btn-info me-2" onClick={() => handleOpenSaleModal(p)}>ערוך מבצע</button>
-                                            <button className="btn btn-sm btn-outline-danger" onClick={() => handleDeleteProduct(p.id)}>מחק</button>
-                                        </td>
-                                    </tr>
+                    {currentView === 'products' && (
+                        <div className="product-list-container" ref={productsRef}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                                <h2>מוצרים</h2>
+                                <div className="admin-actions" style={{ display: 'flex', gap: '10px' }}>
+                                    <button className="btn btn-info" onClick={() => setShowTrash(true)}>הצג פריטים שנמחקו</button>
+                                    <button className="btn btn-success" onClick={() => setShowCouponModal(true)}>נהל קופונים</button>
+                                    <button className="btn btn-primary" onClick={handleAddProduct}>הוסף מוצר</button>
+                                    <button className="btn btn-secondary" onClick={handleAddCategory}>הוסף קטגוריה</button>
+                                </div>
+                            </div>
+                            <div className="category-bar" style={{ display: 'flex', gap: 12, justifyContent: 'center', margin: '24px 0', flexWrap: 'wrap' }}>
+                                <button
+                                    className={`category-btn${selectedCategory === null ? ' selected' : ''}`}
+                                    style={{ background: selectedCategory === null ? '#1a9da1' : '#fff', color: selectedCategory === null ? '#fff' : '#1a9da1', border: '2px solid #1a9da1', borderRadius: 20, padding: '8px 24px', fontWeight: 700, fontSize: 18, cursor: 'pointer', transition: 'all 0.2s' }}
+                                    onClick={() => setSelectedCategory(null)}
+                                >
+                                    הכל
+                                </button>
+                                {!catLoading && activeCategories.map(cat => (
+                                    <button
+                                        key={cat.id}
+                                        className={`category-btn${selectedCategory === cat.id ? ' selected' : ''}`}
+                                        onContextMenu={(e) => handleCategoryContextMenu(e, cat.id)}
+                                        style={{ background: selectedCategory === cat.id ? '#1a9da1' : '#fff', color: selectedCategory === cat.id ? '#fff' : '#1a9da1', border: '2px solid #1a9da1', borderRadius: 20, padding: '8px 24px', fontWeight: 700, fontSize: 18, cursor: 'pointer', transition: 'all 0.2s' }}
+                                        onClick={() => setSelectedCategory(cat.id)}
+                                    >
+                                        {cat.name}
+                                    </button>
                                 ))}
-                            </tbody>
-                        </table>
-                    </div>
+                            </div>
+
+                            <div className="table-responsive">
+                                <table className="table table-striped table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>תמונה</th>
+                                            <th>שם</th>
+                                            <th>תיאור</th>
+                                            <th>מחיר</th>
+                                            <th>זמינות</th>
+                                            <th>מבצע</th>
+                                            <th>פעולות</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {products.map((p) => (
+                                            <tr key={p.id}>
+                                                <td>
+                                                    <img
+                                                        src={p.image || "https://via.placeholder.com/60"}
+                                                        alt={p.name}
+                                                        style={{ width: '60px', height: '60px', cursor: 'pointer', objectFit: 'cover', borderRadius: '4px' }}
+                                                        onClick={() => handleImageUploadClick(p.id)}
+                                                    />
+                                                </td>
+                                                <td><EditableField value={p.name} onSave={(val) => handleFieldUpdate(p.id, 'name', val as string)} /></td>
+                                                <td><EditableField value={p.description} onSave={(val) => handleFieldUpdate(p.id, 'description', val as string)} /></td>
+                                                <td><EditableField value={p.price} onSave={(val) => handleFieldUpdate(p.id, 'price', val as number)} /></td>
+                                                <td>
+                                                    <div className="form-check form-switch d-flex justify-content-center">
+                                                        <input
+                                                            className="form-check-input"
+                                                            type="checkbox"
+                                                            role="switch"
+                                                            checked={p.isAvailable}
+                                                            onChange={(e) => handleFieldUpdate(p.id, 'isAvailable', e.target.checked)}
+                                                        />
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    {p.isOnSale ? (
+                                                        <span className="badge bg-success">{p.salePercentage}% OFF</span>
+                                                    ) : (
+                                                        <span className="badge bg-secondary">אין מבצע</span>
+                                                    )}
+                                                </td>
+                                                <td>
+                                                    <button className="btn btn-sm btn-info me-2" onClick={() => handleOpenSaleModal(p)}>ערוך מבצע</button>
+                                                    <button className="btn btn-sm btn-outline-danger" onClick={() => handleDeleteProduct(p.id)}>מחק</button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    )}
+                    {currentView === 'orders' && <OrdersView />}
                 </div>
                 {showModal && (
                     <CustomModal show={showModal} onHide={() => setShowModal(false)} title={editingProduct ? "Edit Product" : "Add Product"}>
