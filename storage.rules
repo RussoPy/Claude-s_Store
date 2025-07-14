@@ -1,15 +1,39 @@
 rules_version = '2';
 
-// Craft rules based on data in your Firestore database
-// allow write: if firestore.get(
-//    /databases/(default)/documents/users/$(request.auth.uid)).data.isAdmin;
-service firebase.storage {
-  match /b/{bucket}/o {
-    // Allow public read access to product images
-    match /products/{productId}/{imageName} {
-      allow read;
-      // Allow writes only if the user is authenticated
-      allow write: if request.auth != null;
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Products: anyone can read, only admin can write
+    match /products/{productId} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == 'pqERWeAI4vhKa14c5rbcwOGSY5V2';
+    }
+
+    // Categories: anyone can read, only admin can write
+    match /categories/{categoryId} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == 'pqERWeAI4vhKa14c5rbcwOGSY5V2';
+    }
+
+    // Carts: only the guest with the session ID can read/write their cart
+    match /carts/{cartId} {
+      allow read: if !exists(/databases/$(database)/documents/carts/$(cartId)) || resource.data.sessionId == cartId;
+      allow write: if request.resource.data.sessionId == cartId;
+    }
+
+    // Orders: only admin can read/write
+    match /orders/{orderId} {
+      allow read, write: if request.auth != null && request.auth.uid == 'pqERWeAI4vhKa14c5rbcwOGSY5V2';
+    }
+
+    // Admins: only admin can read/write
+    match /admins/{adminId} {
+      allow read, write: if request.auth != null && request.auth.uid == 'pqERWeAI4vhKa14c5rbcwOGSY5V2';
+    }
+
+    // Deny all other access
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }

@@ -1,4 +1,5 @@
 import React, { useContext, useState, useEffect } from 'react';
+import ReactDOM from 'react-dom';
 import { Link, useLocation } from 'react-router-dom';
 import { CartContext } from '../context/CartContext';
 
@@ -43,7 +44,7 @@ const FloatingCartButton = () => {
         transition: 'bottom 0.3s ease-in-out',
     };
 
-    return (
+    const buttonContent = (
         <Link to="/cart" style={buttonStyle}>
             🛒
             {itemCount > 0 && (
@@ -66,6 +67,9 @@ const FloatingCartButton = () => {
             )}
         </Link>
     );
+
+    const portalRoot = document.getElementById('floating-cart-root');
+    return portalRoot ? ReactDOM.createPortal(buttonContent, portalRoot) : null;
 };
 
 export default FloatingCartButton; 

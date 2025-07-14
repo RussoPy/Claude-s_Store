@@ -4,6 +4,10 @@ type AccessibilityState = {
     fontSizeMultiplier: number;
     highContrast: boolean;
     underlineLinks: boolean;
+    grayscale: boolean;
+    readableFont: boolean;
+    invertColors: boolean;
+    highlightHeadings: boolean;
 };
 
 type AccessibilityContextType = {
@@ -13,16 +17,27 @@ type AccessibilityContextType = {
     resetFontSize: () => void;
     toggleHighContrast: () => void;
     toggleUnderlineLinks: () => void;
+    toggleGrayscale: () => void;
+    toggleReadableFont: () => void;
+    toggleInvertColors: () => void;
+    toggleHighlightHeadings: () => void;
+    resetAll: () => void;
+};
+
+const defaultSettings: AccessibilityState = {
+    fontSizeMultiplier: 1,
+    highContrast: false,
+    underlineLinks: false,
+    grayscale: false,
+    readableFont: false,
+    invertColors: false,
+    highlightHeadings: false,
 };
 
 const AccessibilityContext = createContext<AccessibilityContextType | undefined>(undefined);
 
 export const AccessibilityProvider = ({ children }: { children: ReactNode }) => {
-    const [settings, setSettings] = useState<AccessibilityState>({
-        fontSizeMultiplier: 1,
-        highContrast: false,
-        underlineLinks: false,
-    });
+    const [settings, setSettings] = useState<AccessibilityState>(defaultSettings);
 
     const increaseFontSize = () => {
         setSettings(s => ({ ...s, fontSizeMultiplier: Math.min(s.fontSizeMultiplier + 0.1, 1.5) }));
@@ -44,8 +59,40 @@ export const AccessibilityProvider = ({ children }: { children: ReactNode }) => 
         setSettings(s => ({ ...s, underlineLinks: !s.underlineLinks }));
     };
 
+    const toggleGrayscale = () => {
+        setSettings(s => ({ ...s, grayscale: !s.grayscale }));
+    };
+
+    const toggleReadableFont = () => {
+        setSettings(s => ({ ...s, readableFont: !s.readableFont }));
+    };
+
+    const toggleInvertColors = () => {
+        setSettings(s => ({ ...s, invertColors: !s.invertColors }));
+    };
+
+    const toggleHighlightHeadings = () => {
+        setSettings(s => ({ ...s, highlightHeadings: !s.highlightHeadings }));
+    };
+
+    const resetAll = () => {
+        setSettings(defaultSettings);
+    }
+
     return (
-        <AccessibilityContext.Provider value={{ settings, increaseFontSize, decreaseFontSize, resetFontSize, toggleHighContrast, toggleUnderlineLinks }}>
+        <AccessibilityContext.Provider value={{
+            settings,
+            increaseFontSize,
+            decreaseFontSize,
+            resetFontSize,
+            toggleHighContrast,
+            toggleUnderlineLinks,
+            toggleGrayscale,
+            toggleReadableFont,
+            toggleInvertColors,
+            toggleHighlightHeadings,
+            resetAll,
+        }}>
             {children}
         </AccessibilityContext.Provider>
     );

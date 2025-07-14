@@ -19,6 +19,7 @@ import { doc, getDoc } from 'firebase/firestore';
 import { AccessibilityProvider, useAccessibility } from './context/AccessibilityContext';
 import { AccessibilityMenu } from './components/AccessibilityMenu';
 import ScrollToTop from './components/ScrollToTop';
+import ContactPage from './pages/ContactPage';
 import './App.css';
 
 const ProductAddedIndicator = ({ show, type }: { show: boolean, type: 'add' | 'remove' }) => (
@@ -84,7 +85,11 @@ function AppWrapper() {
 
   const classNames = [
     settings.highContrast ? 'high-contrast' : '',
-    settings.underlineLinks ? 'underline-links' : ''
+    settings.underlineLinks ? 'underline-links' : '',
+    settings.grayscale ? 'grayscale' : '',
+    settings.readableFont ? 'readable-font' : '',
+    settings.invertColors ? 'invert-colors' : '',
+    settings.highlightHeadings ? 'highlight-headings' : ''
   ].filter(Boolean).join(' ');
 
   return (
@@ -104,6 +109,7 @@ function AppWrapper() {
               <Route path="/terms" element={<TermsPage />} />
               <Route path="/privacy" element={<PrivacyPolicyPage />} />
               <Route path="/accessibility-statement" element={<AccessibilityStatementPage />} />
+              <Route path="/contact" element={<ContactPage />} />
             </Routes>
           </main>
           <Footer />

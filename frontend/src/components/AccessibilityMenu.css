@@ -137,6 +137,23 @@
     /* Style the checkmark color */
 }
 
+.reset-all-button {
+    width: 100%;
+    padding: 12px;
+    background-color: #e74c3c;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.reset-all-button:hover {
+    background-color: #c0392b;
+}
+
 /* High Contrast Styles for the Menu Itself */
 .high-contrast .accessibility-controls {
     background: #000 !important;

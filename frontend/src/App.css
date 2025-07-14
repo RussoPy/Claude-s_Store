@@ -681,3 +681,31 @@ footer {
 .underline-links a {
   text-decoration: underline !important;
 }
+
+.grayscale {
+  filter: grayscale(100%);
+}
+
+.invert-colors {
+  filter: invert(100%);
+}
+
+.invert-colors img,
+.invert-colors video {
+  filter: invert(100%);
+}
+
+.readable-font,
+.readable-font * {
+  font-family: Arial, "Helvetica Neue", Helvetica, sans-serif !important;
+}
+
+.highlight-headings h1,
+.highlight-headings h2,
+.highlight-headings h3,
+.highlight-headings h4,
+.highlight-headings h5,
+.highlight-headings h6 {
+  background-color: yellow !important;
+  color: black !important;
+}

@@ -10,7 +10,7 @@ import { getGuestSessionId } from '../utils/guestSession';
 import { rateLimiter } from '../utils/rateLimiter';
 
 // Custom component to handle the loading state of the PayPal script
-const PayPalCheckoutButton = ({ createOrder, onApprove, onError, onCancel }: any) => {
+const PayPalCheckoutButton = ({ createOrder, onApprove, onError, onCancel, disabled }: any) => {
   const [{ isPending }, dispatch] = usePayPalScriptReducer();
 
   useEffect(() => {
@@ -26,7 +26,7 @@ const PayPalCheckoutButton = ({ createOrder, onApprove, onError, onCancel }: any
         onApprove={onApprove}
         onError={onError}
         onCancel={onCancel}
-        disabled={isPending}
+        disabled={isPending || disabled}
       />
     </>
   );
@@ -39,6 +39,7 @@ const CheckoutPage = () => {
   const [finalTotal, setFinalTotal] = useState(0);
   const [discountAmount, setDiscountAmount] = useState(0);
   const [couponMessage, setCouponMessage] = useState('');
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const [shippingMethod, setShippingMethod] = useState('pickup'); // 'pickup' or 'delivery'
   const [shippingCost, setShippingCost] = useState(0);
   const { getCartTotal, clearCart, cartItems } = cartContext || {};
@@ -270,11 +271,25 @@ const CheckoutPage = () => {
             </div>
           </div>
           <div style={{ marginTop: '20px', zIndex: 0 }}>
+            <div className="form-check my-3" style={{ textAlign: 'right' }}>
+              <input
+                className="form-check-input"
+                style={{ float: 'right', marginLeft: '10px' }}
+                type="checkbox"
+                id="termsAndConditions"
+                checked={termsAccepted}
+                onChange={(e) => setTermsAccepted(e.target.checked)}
+              />
+              <label className="form-check-label" htmlFor="termsAndConditions">
+                קראתי והבנתי את <a href="/terms" target="_blank" rel="noopener noreferrer">תנאי השימוש</a>
+              </label>
+            </div>
             <PayPalCheckoutButton
               createOrder={createOrder}
               onApprove={onApprove}
               onError={onError}
               onCancel={onCancel}
+              disabled={!termsAccepted}
             />
           </div>
         </div>
